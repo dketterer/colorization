@@ -1,0 +1,9 @@
+venv
+.idea
+__pycache__
+logs
+*.zip
+image*
+*.h5
+*.hdf5
+.ipynb_checkpoints

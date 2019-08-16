@@ -2,6 +2,8 @@
 
 Code to train and run a Colorization U-Net.
 
+**Trained weights can be found in the releases**
+
 # Prerequisites
 
 Machine needs a Nvidia GPU with installed drivers and CUDA 10.0 (for Tensorflow 1.14).  

@@ -7,3 +7,6 @@ image*
 *.h5
 *.hdf5
 .ipynb_checkpoints
+*.npy
+img_results
+*.png

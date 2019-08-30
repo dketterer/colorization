@@ -9,4 +9,3 @@ image*
 .ipynb_checkpoints
 *.npy
 img_results
-*.png

@@ -13,18 +13,23 @@ from keras_unet.models import custom_unet
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--images', type=str, required=True)
-    parser.add_argument('--val_images', type=str, required=True)
-    parser.add_argument('--log_dir', type=str, required=True)
-    parser.add_argument('--weights', type=str)
-    parser.add_argument('--image_size', type=int)
-    parser.add_argument('--epochs', type=int, default=4)
-    parser.add_argument('--batch_size', type=int, default=1)
-    parser.add_argument('--plot', type=str, help='Write image of model architecture to this png file')
-    parser.add_argument('--loss', type=str)
-    parser.add_argument('--large', action='store_true')
-    parser.add_argument('--alt_model', action='store_true')
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('images', type=str,
+                        help='Read training images from this dir and its sub-dirs. Supported file exts: .jpg, .jpeg .JPG .JPEG')
+    parser.add_argument('val_images', type=str,
+                        help='Read validation images from this dir and its sub-dirs. Supported file exts: .jpg, .jpeg .JPG .JPEG')
+    parser.add_argument('log_dir', type=str,
+                        help='Log the tensorboard file, checkpoints, final weights and a trained model to this dir')
+    parser.add_argument('loss', type=str, choices=['l1', 'l2'], help='The loss function')
+    parser.add_argument('--weights', type=str,
+                        help='Load this weight file and train on top of it. Read the epoch number and train the difference to "epochs"')
+    parser.add_argument('--image_size', type=int, default=256,
+                        help='One value for width and height of the resized training inputs')
+    parser.add_argument('--epochs', type=int, default=4, help='Number of epochs the model shall be trained afterwards')
+    parser.add_argument('--batch_size', type=int, default=8, help='Training batch size')
+    parser.add_argument('--plot', type=str, help='Write image of the model architecture to this png file')
+    parser.add_argument('--large', action='store_true', help='Use 64 filters in the first conv block not 32, and so on')
+    parser.add_argument('--alt_model', action='store_true', help='Use the model from the keras-unet package instead of the self-defined')
     return parser.parse_args()
 
 

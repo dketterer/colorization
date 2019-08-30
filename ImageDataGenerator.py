@@ -62,12 +62,15 @@ class ImageDataGenerator(object):
         self.folder = folder
         self.image_size = image_size
         self.paths = []
+
+        image_extensions = ['.jpg', '.jpeg', '.JPG', '.JPEG']
+
         for file in os.listdir(self.folder):
             if os.path.isdir(os.path.join(self.folder, file)):
                 for file2 in os.listdir(os.path.join(self.folder, file)):
-                    if file2.endswith('.JPEG'):
+                    if os.path.splitext(file2)[1] in image_extensions:
                         self.paths.append(os.path.join(self.folder, file, file2))
-            if file.endswith('.jpg') or file.endswith('.JPEG'):
+            if os.path.splitext(file)[1] in image_extensions:
                 self.paths.append(os.path.join(self.folder, file))
 
         self.q_1 = Queue(workers)

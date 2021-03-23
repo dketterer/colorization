@@ -30,6 +30,11 @@ def parse_args(args):
 
     parser_infer = subparsers.add_parser('infer', help='run inference on data')
     parser_infer.add_argument('model', type=str, help='path to output model or checkpoint to resume from')
+    parser_infer.add_argument('--images', metavar='path', type=str, help='path to images', default='.')
+    parser_infer.add_argument('--target_path', metavar='path', type=str, help='path to images', default='predictions')
+    parser_infer.add_argument('--batch_size', metavar='value', type=int, help='Epochs until end', default=8)
+    parser_infer.add_argument('--img_limit', metavar='value', type=int, help='Epochs until end', default=50)
+    parser_infer.add_argument('--debug', action='store_true', help='Epochs until end')
 
     parsed_args = parser.parse_args(args)
     return parsed_args
@@ -69,17 +74,22 @@ def main(args):
         print(f'Use CUDA backend: {torch.cuda.get_device_name()}')
 
     if args.command == 'train':
-        growing_parameters = {0: (512, (32, 32)),
-                              8: (512, (64, 64)),
-                              12: (256, (128, 128)),
-                              16: (16, (256, 256)),
-                              20: (8, (512, 512))}
+        growing_parameters = {0: (16, (128, 128)),
+                              2: (8, (256, 256)),
+                              8: (4, (512, 512)),
+                              10: (32, (512, 512)),
+                              11: (8, (512, 512))}
 
         train.train(model, state, args.images, args.val_images, args.transform, growing_parameters, args.lr,
                     args.momentum, args.epochs, args.verbose)
 
     elif args.command == 'infer':
-        infer.infer(model, args.images)
+        infer.infer(model=model,
+                    image_path=args.images,
+                    target_path=args.target_path,
+                    batch_size=args.batch_size,
+                    img_limit=args.img_limit,
+                    debug=args.debug)
 
 
 if __name__ == '__main__':

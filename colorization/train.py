@@ -17,6 +17,8 @@ from torchvision.transforms import ToTensor, Compose, Normalize
 
 from colorization.data import ImagenetData, get_trainloader
 from colorization.model import Model
+from colorization.preprocessing import to_tensor_l, to_tensor_ab
+from colorization.infer import infer
 
 
 def imshow(img):
@@ -81,10 +83,6 @@ def train(model: Model,
 
     transform = transforms.get_transform(input_size[0])
 
-    to_tensor_l = Compose([ToTensor(),
-                           Normalize((0.5,), (0.5,))])
-    to_tensor_ab = Compose([ToTensor(),
-                            Normalize((0.5, 0.5), (0.5, 0.5))])
     trainset = ImagenetData(train_data_path, transform=transform, transform_l=to_tensor_l,
                             transform_ab=to_tensor_ab)
     trainloader = get_trainloader(trainset, batch_size)
@@ -110,10 +108,12 @@ def train(model: Model,
         criterion = criterion.cuda()
     # lr: 0.0003
     # momentum = 0.9
-    optimizer = optim.SGD(model.parameters(), lr=lr, momentum=momentum)
+    optimizer = optim.Adam(model.parameters(), lr=lr)
+    if 'optimizer' in state:
+        optimizer.load_state_dict(state['optimizer'])
 
     scaler = GradScaler(enabled=True)
-    start_epoch = state.get('epoch', 0)
+    start_epoch = state.get('epoch', -1) + 1
     for epoch in range(start_epoch, epochs):  # loop over the dataset multiple times
         # change batch size and input size
         if epoch in growing_parameters:
@@ -162,6 +162,14 @@ def train(model: Model,
         #    val_loss = get_validation_loss(testloader, model, criterion)
         # model = model.train()
         # print(f'Validation in {(time.time() - tic):.2f}s - loss: {val_loss:.3f}')
+
+        infer(model=model,
+              image_path=val_data_path,
+              target_path=os.path.join(os.path.dirname(state['path']), f'predictions-{epoch}'),
+              batch_size=1,
+              img_limit=20,
+              debug=True)
+
         state.update({
             'epoch': epoch,
             'optimizer': optimizer.state_dict(),

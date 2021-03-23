@@ -2,6 +2,8 @@ import cv2 as cv
 import numpy as np
 import math
 
+from torchvision.transforms import Compose, ToTensor, Normalize
+
 
 def split_colors(image):
     lab = cv.cvtColor(image, cv.COLOR_BGR2LAB)
@@ -101,3 +103,9 @@ def inference_prepro(image, input_size):
     # subtract 1
     image = preprocessing(image)
     return image
+
+
+to_tensor_l = Compose([ToTensor(),
+                       Normalize((0.5,), (0.5,))])
+to_tensor_ab = Compose([ToTensor(),
+                        Normalize((0.5, 0.5), (0.5, 0.5))])

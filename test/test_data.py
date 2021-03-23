@@ -1,4 +1,6 @@
 import unittest
+
+import cv2
 import numpy as np
 
 from colorization import data
@@ -25,6 +27,16 @@ class TestImagenetData(unittest.TestCase):
         self.assertEqual(0, np.round(ab[:, :, -2]))
         self.assertEqual(0, np.round(ab[:, :, -1]))
 
+    def test_color(self):
+        bgr = cv2.imread('test/resources/images/ILSVRC2012_test_00000010.JPEG')
+        rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
+        lab = cv2.cvtColor(rgb, cv2.COLOR_RGB2LAB)
+        back_bgr = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
+
+        try:
+            np.testing.assert_allclose(back_bgr, bgr, atol=6, rtol=255)
+        except Exception:
+            self.fail()
 
 if __name__ == '__main__':
     unittest.main()

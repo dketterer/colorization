@@ -41,6 +41,11 @@ class UNet(nn.Module):
 
 
 @register
+def UNet_bc16_d3():
+    return UNet(in_channels=1, base_channel_size=16, bilinear=True, depth=3)
+
+
+@register
 def UNet_bc64_d3():
     return UNet(in_channels=1, base_channel_size=64, bilinear=True, depth=3)
 

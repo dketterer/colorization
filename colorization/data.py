@@ -4,6 +4,7 @@ from typing import Callable
 import cv2
 import numpy as np
 import torch
+
 from torch.utils.data import Dataset
 import matplotlib.pyplot as plt
 
@@ -16,6 +17,7 @@ class ImagenetData(Dataset):
                  transform: Callable = None,
                  transform_l: Callable = None,
                  transform_ab: Callable = None,
+                 training: bool = True,
                  debug: bool = False):
         """
 
@@ -27,6 +29,8 @@ class ImagenetData(Dataset):
         :type transform_l: Callable
         :param transform_ab: PyTorch transform applied to the ab channel (eg Convert to Tensor)
         :type transform_ab: Callable
+        :param training: Indicate training or otherwise inference mode
+        :type training: bool
         :param debug
         :type debug: bool
         """
@@ -36,6 +40,7 @@ class ImagenetData(Dataset):
         self.transform = transform
         self.to_tensor_l = transform_l
         self.to_tensor_ab = transform_ab
+        self.training = training
 
         image_extensions = ['.jpg', '.jpeg', '.JPG', '.JPEG', '.png', '.PNG']
 
@@ -54,8 +59,8 @@ class ImagenetData(Dataset):
 
     def __getitem__(self, item):
         img_path = self.paths[item]
-        img = cv2.imread(img_path, cv2.IMREAD_COLOR)
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        img_orig = cv2.imread(img_path, cv2.IMREAD_COLOR)
+        img = cv2.cvtColor(img_orig, cv2.COLOR_BGR2RGB)
 
         if self.transform:
             img = self.transform(image=img)['image']
@@ -64,19 +69,20 @@ class ImagenetData(Dataset):
             plt.imshow(img)
             plt.show()
 
-        img = img.astype('float32')
         img = cv2.cvtColor(img, cv2.COLOR_RGB2LAB)
-        img = img.astype('uint8')
 
-        grey, ab = split_channels(img)
-
+        grey_orig, ab_orig = split_channels(img)
+        grey, ab = grey_orig, ab_orig
         if self.to_tensor_l:
             grey = self.to_tensor_l(grey)
 
         if self.to_tensor_ab:
             ab = self.to_tensor_ab(ab)
 
-        return grey, ab
+        if self.training:
+            return grey, ab
+
+        return grey, ab, img_orig, grey_orig
 
     def collate_fn(self, batch):
         greys, abs = zip(*batch)

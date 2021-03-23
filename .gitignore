@@ -1,5 +1,4 @@
 venv
-.idea
 __pycache__
 logs
 *.zip
@@ -9,3 +8,5 @@ image*
 .ipynb_checkpoints
 *.npy
 img_results
+
+docs/_build

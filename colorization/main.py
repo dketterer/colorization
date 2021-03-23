@@ -74,14 +74,12 @@ def main(args):
         print(f'Use CUDA backend: {torch.cuda.get_device_name()}')
 
     if args.command == 'train':
-        growing_parameters = {0: (16, (128, 128)),
-                              2: (8, (256, 256)),
-                              8: (4, (512, 512)),
-                              10: (32, (512, 512)),
-                              11: (8, (512, 512))}
+        growing_parameters = {0: (512, (128, 128)),
+                              4: (256, (256, 256)),
+                              8: (128, (256, 256))}
 
         train.train(model, state, args.images, args.val_images, args.transform, growing_parameters, args.lr,
-                    args.momentum, args.epochs, args.verbose)
+                    args.epochs, args.verbose)
 
     elif args.command == 'infer':
         infer.infer(model=model,

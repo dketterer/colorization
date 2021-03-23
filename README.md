@@ -3,7 +3,7 @@
 ```
 conda install numpy ninja pyyaml mkl mkl-include setuptools cmake cffi typing_extensions future six requests dataclasses
 conda install -c conda-forge opencv jupyterlab albumentations matplotlib torchvision
-conda install tqdm
+conda install tqdm protobuf
 
 ```
 

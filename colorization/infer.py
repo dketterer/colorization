@@ -43,7 +43,8 @@ def infer(model: Model,
           target_path: str,
           batch_size: int = 8,
           img_limit: int = 50,
-          debug: bool = False):
+          debug: bool = False,
+          tensorboard: bool = False):
     if not os.path.exists(target_path):
         os.makedirs(target_path, exist_ok=True)
 
@@ -54,6 +55,9 @@ def infer(model: Model,
                             num_workers=4,
                             pin_memory=True,
                             prefetch_factor=batch_size)
+
+    results = []
+
     model = model.eval()
     if torch.cuda.is_available():
         model = model.cuda()
@@ -80,7 +84,12 @@ def infer(model: Model,
             else:
                 img_result = stich_image(grey_orig[j, ...], prediction[j, ...])
 
+            if tensorboard:
+                results.append(cv2.cvtColor(img_result, cv2.COLOR_BGR2RGB))
+
             cv2.imwrite(os.path.join(target_path, f'prediction-{img_index:05d}.jpg'), img_result)
             img_index += 1
         if (i + 1) * batch_size >= img_limit:
             break
+    if tensorboard:
+        return results

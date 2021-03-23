@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import numpy as np
+from torch.utils.tensorboard import SummaryWriter
 
 np.random.seed(0)
 import torch
@@ -68,10 +69,9 @@ def train(model: Model,
           transform_file: str,
           growing_parameters: dict,
           lr: float,
-          momentum: float,
           epochs: int,
           verbose: bool,
-          print_every: int = 30):
+          print_every: int = 10):
     batch_size = 4
     input_size = (512, 512)
 
@@ -83,21 +83,13 @@ def train(model: Model,
 
     transform = transforms.get_transform(input_size[0])
 
-    trainset = ImagenetData(train_data_path, transform=transform, transform_l=to_tensor_l,
-                            transform_ab=to_tensor_ab)
-    trainloader = get_trainloader(trainset, batch_size)
-    testset = ImagenetData(val_data_path, transform=transforms.get_val_transform(512), transform_l=to_tensor_l,
-                           transform_ab=to_tensor_ab)
-    testloader = torch.utils.data.DataLoader(testset, batch_size=1, shuffle=False, num_workers=4, pin_memory=True)
+    trainset = ImagenetData(train_data_path, transform=transform, transform_l=to_tensor_l, transform_ab=to_tensor_ab)
+    testset = ImagenetData(val_data_path, transform=None, transform_l=to_tensor_l, transform_ab=to_tensor_ab)
 
-    if False:
-        # get some random training images
-        dataiter = iter(trainloader)
-        images, labels = dataiter.next()
-        # labels = labels.permute(0, 3, 1, 2)
+    model_dir = os.path.dirname(state['path'])
 
-        # show images
-        imshow(torch.cat([images, labels], 1))
+    writer = SummaryWriter(log_dir=os.path.join(model_dir, 'logs'))
+
     if model.head_type == 'regression':
         criterion = torch.nn.MSELoss()
     else:
@@ -116,10 +108,11 @@ def train(model: Model,
     start_epoch = state.get('epoch', -1) + 1
     for epoch in range(start_epoch, epochs):  # loop over the dataset multiple times
         # change batch size and input size
-        if epoch in growing_parameters:
-            batch_size, input_size = growing_parameters[epoch]
-            trainset.transform = transforms.get_transform(input_size[0])
-            trainloader = get_trainloader(trainset, batch_size)
+        if epoch not in growing_parameters:
+            raise
+        batch_size, input_size = growing_parameters[epoch]
+        trainset.transform = transforms.get_transform(input_size[0])
+        trainloader = get_trainloader(trainset, batch_size)
 
         model = model.train()
 
@@ -128,7 +121,10 @@ def train(model: Model,
         tic = time.time()
 
         pbar = tqdm(trainloader)
+        pbar.set_description(
+            f'[{epoch + 1}/{epochs}, 1] loss: -- - -- img/s')
         for i, data in enumerate(pbar):
+
             # get data
             inputs, labels = data
             # labels = labels.permute(0, 3, 1, 2)
@@ -150,9 +146,13 @@ def train(model: Model,
 
             if i % print_every == print_every - 1:  # print every 2000 mini-batches
                 avg_running_loss = running_loss / print_every
+                global_step = epoch * len(trainloader) * batch_size + (i + 1) * batch_size
+                writer.add_scalar('loss/MSE/train', avg_running_loss, global_step=global_step)
+
                 img_per_sec = print_every * batch_size / (time.time() - tic)
+                writer.add_scalar('Performance/Images per second', img_per_sec, global_step=global_step)
                 pbar.set_description(
-                    f'[{epoch + 1}, {i + 1}] loss: {running_loss:.3f} - {img_per_sec:.2f} img/s')
+                    f'[{epoch + 1}/{epochs}, {i + 1}] loss: {avg_running_loss:.3f} - {img_per_sec:.2f} img/s')
                 tic = time.time()
                 running_loss = 0.0
         # run validation
@@ -162,13 +162,16 @@ def train(model: Model,
         #    val_loss = get_validation_loss(testloader, model, criterion)
         # model = model.train()
         # print(f'Validation in {(time.time() - tic):.2f}s - loss: {val_loss:.3f}')
-
-        infer(model=model,
-              image_path=val_data_path,
-              target_path=os.path.join(os.path.dirname(state['path']), f'predictions-{epoch}'),
-              batch_size=1,
-              img_limit=20,
-              debug=True)
+        global_step = (epoch + 1) * len(trainloader) * batch_size
+        predicted_images = infer(model=model,
+                                 image_path=val_data_path,
+                                 target_path=os.path.join(model_dir, f'predictions-{epoch}'),
+                                 batch_size=1,
+                                 img_limit=20,
+                                 debug=True,
+                                 tensorboard=True)
+        for i, img in enumerate(predicted_images):
+            writer.add_image(f'example-{i}', img, global_step=global_step, dataformats='HWC')
 
         state.update({
             'epoch': epoch,
@@ -176,5 +179,5 @@ def train(model: Model,
             'loss': loss,
         })
         model.save(state)
-
+    writer.close()
     print('Finished Training')

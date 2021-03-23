@@ -2,16 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="9975ce25-111e-4589-8757-f942c9e40dfe" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/colorization.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/colorization.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/colorization/backbones/unet.py" beforeDir="false" afterPath="$PROJECT_DIR$/colorization/backbones/unet.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/colorization/data.py" beforeDir="false" afterPath="$PROJECT_DIR$/colorization/data.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/colorization/infer.py" beforeDir="false" afterPath="$PROJECT_DIR$/colorization/infer.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/colorization/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/colorization/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/colorization/preprocessing.py" beforeDir="false" afterPath="$PROJECT_DIR$/colorization/preprocessing.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/colorization/train.py" beforeDir="false" afterPath="$PROJECT_DIR$/colorization/train.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/test_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/test/test_data.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -205,7 +200,7 @@
       <workItem from="1616346385280" duration="7062000" />
       <workItem from="1616359835695" duration="3820000" />
       <workItem from="1616401183216" duration="38620000" />
-      <workItem from="1616503156996" duration="14064000" />
+      <workItem from="1616503156996" duration="21157000" />
     </task>
     <task id="LOCAL-00001" summary="add first steps rewrite steps, working training">
       <created>1616503320586</created>
@@ -221,7 +216,14 @@
       <option name="project" value="LOCAL" />
       <updated>1616503352476</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="add inference, first working results">
+      <created>1616518897421</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1616518897421</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -241,7 +243,8 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="add first steps rewrite steps, working training" />
-    <option name="LAST_COMMIT_MESSAGE" value="add first steps rewrite steps, working training" />
+    <MESSAGE value="add inference, first working results" />
+    <option name="LAST_COMMIT_MESSAGE" value="add inference, first working results" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/colorization$Unittests_for_data_TestImagenetData_test_basics.coverage" NAME="Unittests for data.TestImagenetData.test_basics Coverage Results" MODIFIED="1616405141760" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/test" />

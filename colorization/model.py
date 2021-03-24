@@ -1,3 +1,4 @@
+import math
 import os
 
 import torch
@@ -27,8 +28,18 @@ class Model(nn.Module):
         x = self.head(x)
         return x
 
+    def initialize(self):
+
+        self.backbone.initialize()
+
+        # Initialize head
+        self.head.initialize()
+
     def __repr__(self):
-        return f''
+        return '\n'.join([
+            f'     model: {self.name}',
+            f'  backbone: {self.backbone_name}',
+        ])
 
     def save(self, state):
         checkpoint = {

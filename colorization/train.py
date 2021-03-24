@@ -71,6 +71,7 @@ def train(model: Model,
           lr: float,
           epochs: int,
           verbose: bool,
+          regularization_l2: float = 0.,
           print_every: int = 10):
     batch_size = 4
     input_size = (512, 512)
@@ -100,7 +101,7 @@ def train(model: Model,
         criterion = criterion.cuda()
     # lr: 0.0003
     # momentum = 0.9
-    optimizer = optim.Adam(model.parameters(), lr=lr)
+    optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=regularization_l2)
     if 'optimizer' in state:
         optimizer.load_state_dict(state['optimizer'])
 

@@ -11,6 +11,6 @@ class OutConv(nn.Module):
         x = self.conv(x)
         return nn.Tanh()(x)
 
-    def reset_weights(self):
+    def initialize(self):
         nn.init.xavier_normal_(self.conv.weight, torch.nn.init.calculate_gain('tanh'))
         nn.init.zeros_(self.conv.bias)

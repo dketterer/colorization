@@ -3,9 +3,10 @@
   <component name="ChangeListManager">
     <list default="true" id="9975ce25-111e-4589-8757-f942c9e40dfe" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/colorization/infer.py" beforeDir="false" afterPath="$PROJECT_DIR$/colorization/infer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/colorization/backbones/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/colorization/backbones/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/colorization/backbones/heads.py" beforeDir="false" afterPath="$PROJECT_DIR$/colorization/backbones/heads.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/colorization/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/colorization/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/colorization/model.py" beforeDir="false" afterPath="$PROJECT_DIR$/colorization/model.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/colorization/train.py" beforeDir="false" afterPath="$PROJECT_DIR$/colorization/train.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -16,8 +17,8 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
-        <option value="Python Script" />
         <option value="Python Unit Test" />
+        <option value="Python Script" />
       </list>
     </option>
   </component>
@@ -200,7 +201,8 @@
       <workItem from="1616346385280" duration="7062000" />
       <workItem from="1616359835695" duration="3820000" />
       <workItem from="1616401183216" duration="38620000" />
-      <workItem from="1616503156996" duration="21157000" />
+      <workItem from="1616503156996" duration="23396000" />
+      <workItem from="1616575109162" duration="17273000" />
     </task>
     <task id="LOCAL-00001" summary="add first steps rewrite steps, working training">
       <created>1616503320586</created>
@@ -223,7 +225,14 @@
       <option name="project" value="LOCAL" />
       <updated>1616518897421</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="add tensorboard">
+      <created>1616530807902</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1616530807902</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -244,7 +253,8 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="add first steps rewrite steps, working training" />
     <MESSAGE value="add inference, first working results" />
-    <option name="LAST_COMMIT_MESSAGE" value="add inference, first working results" />
+    <MESSAGE value="add tensorboard" />
+    <option name="LAST_COMMIT_MESSAGE" value="add tensorboard" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/colorization$Unittests_for_data_TestImagenetData_test_basics.coverage" NAME="Unittests for data.TestImagenetData.test_basics Coverage Results" MODIFIED="1616405141760" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/test" />

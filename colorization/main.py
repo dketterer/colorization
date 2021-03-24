@@ -25,6 +25,8 @@ def parse_args(args):
     parser_train.add_argument('--backbone', action='store', type=str, help='backbone model', default='UNet_bc64_d4')
     parser_train.add_argument('--head_type', metavar='store', type=str, help='head type', default='regression')
     parser_train.add_argument('--lr', metavar='value', type=float, help='Learning rate', default=0.0003)
+    parser_train.add_argument('--regularization_l2', '-reg_l2', metavar='value', type=float,
+                              help='Weight regularization', default=0.)
     parser_train.add_argument('--momentum', metavar='value', type=float, help='SGD Optimizer Momentum', default=0.9)
     parser_train.add_argument('--epochs', metavar='value', type=int, help='Epochs until end', default=1)
 
@@ -51,8 +53,7 @@ def load_model(args, verbose=False):
             print('Initializing model...')
         model = Model(backbone_name=args.backbone, head_type=args.head_type)
         state = {'path': args.model}
-        # TODO
-        # model.initialize(args.fine_tune)
+        model.initialize()
         if verbose: print(model)
 
     elif ext == '.pth' or ext == '.torch':
@@ -67,6 +68,9 @@ def load_model(args, verbose=False):
 
 
 def main(args):
+    if not os.path.exists(os.path.dirname(args.model)):
+        os.makedirs(os.path.dirname(args.model), exist_ok=True)
+
     model, state = load_model(args, verbose=args.verbose)
     # if model: model.share_memory()
 
@@ -74,12 +78,11 @@ def main(args):
         print(f'Use CUDA backend: {torch.cuda.get_device_name()}')
 
     if args.command == 'train':
-        growing_parameters = {0: (512, (128, 128)),
-                              4: (256, (256, 256)),
-                              8: (128, (256, 256))}
+        growing_parameters = {0: (8, (256, 256))}
 
-        train.train(model, state, args.images, args.val_images, args.transform, growing_parameters, args.lr,
-                    args.epochs, args.verbose)
+        train.train(model=model, state=state, train_data_path=args.images, val_data_path=args.val_images,
+                    transform_file=args.transform, growing_parameters=growing_parameters, lr=args.lr,
+                    regularization_l2=args.regularization_l2, epochs=args.epochs, verbose=args.verbose)
 
     elif args.command == 'infer':
         infer.infer(model=model,

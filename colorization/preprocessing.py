@@ -2,7 +2,7 @@ import cv2 as cv
 import numpy as np
 import math
 
-from torchvision.transforms import Compose, ToTensor, Normalize
+from torchvision.transforms import Compose, ToTensor, Normalize, Lambda
 
 
 def split_colors(image):
@@ -105,7 +105,21 @@ def inference_prepro(image, input_size):
     return image
 
 
+def prepare_for_tanh(ab):
+    """ Inputs are expected as float32 in [0.0, 1.0]
+    Outputs are stretched to [-1.0, 1.0]
+
+    :param ab: Inputs are expected as float32 in [0.0, 1.0]
+    :type ab: torch.Tensor
+    :return: Outputs are stretched to [-1.0, 1.0]
+    :rtype: torch.Tensor
+    """
+    ab *= 2
+    ab -= 1
+    return ab
+
+
 to_tensor_l = Compose([ToTensor(),
                        Normalize((0.5,), (0.5,))])
 to_tensor_ab = Compose([ToTensor(),
-                        Normalize((0.5, 0.5), (0.5, 0.5))])
+                        Lambda(lambd=prepare_for_tanh)])

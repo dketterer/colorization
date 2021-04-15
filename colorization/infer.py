@@ -1,6 +1,7 @@
 import os
 
 import cv2
+from torch.cuda.amp import autocast
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 import torch
@@ -44,11 +45,12 @@ def infer(model: Model,
           batch_size: int = 8,
           img_limit: int = 50,
           debug: bool = False,
+          transform=None,
           tensorboard: bool = False):
     if not os.path.exists(target_path):
         os.makedirs(target_path, exist_ok=True)
 
-    dataset = ImagenetData(image_path, transform_l=to_tensor_l, transform_ab=to_tensor_ab, training=False)
+    dataset = ImagenetData(image_path, transform=transform, transform_l=to_tensor_l, transform_ab=to_tensor_ab, training=False)
     dataloader = DataLoader(dataset,
                             batch_size=batch_size,
                             shuffle=False,
@@ -70,7 +72,8 @@ def infer(model: Model,
         if torch.cuda.is_available():
             grey = grey.cuda()
         with torch.no_grad():
-            prediction = model(grey)
+            with autocast():
+                prediction = model(grey)
         del grey
 
         prediction = prediction.to('cpu:0').numpy()

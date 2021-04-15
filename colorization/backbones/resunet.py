@@ -10,9 +10,11 @@ class ResUNet(nn.Module):
     def __init__(self, features, bilinear: bool = True):
         super(ResUNet, self).__init__()
         self.features = features
+        self.name = 'ResUNet'
 
         is_light = self.features.bottleneck == vrn.BasicBlock
         channels = [64, 64, 128, 256, 512] if is_light else [64, 256, 512, 1024, 2048]
+        self.base_channel_size = channels[0]
         factor = 2 if bilinear else 1
 
         self.top = nn.Sequential(
@@ -57,6 +59,10 @@ class ResUNet(nn.Module):
 
         self.features.initialize()
 
+
+@register
+def ResUNet50_bc64():
+    return Resnet50_UNet()
 
 @register
 def Resnet50_UNet():

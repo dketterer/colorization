@@ -14,8 +14,8 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../src/docs'))
-sys.path.append(os.path.abspath(os.path.join("../src")))
+sys.path.insert(0, os.path.abspath(os.path.join("..")))
+print(sys.path)
 import colorization
 
 

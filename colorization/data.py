@@ -64,6 +64,8 @@ class ImagenetData(Dataset):
 
         if self.transform:
             img = self.transform(image=img)['image']
+            if not self.training:
+                img_orig = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 
         if self.debug:
             plt.imshow(img)
@@ -92,10 +94,10 @@ class ImagenetData(Dataset):
         return greys_stacked, abs_stacked
 
 
-def get_trainloader(dataset, batch_size):
+def get_trainloader(dataset, batch_size, shuffle=True):
     return torch.utils.data.DataLoader(dataset,
                                        batch_size=batch_size,
-                                       shuffle=True,
+                                       shuffle=shuffle,
                                        num_workers=4,
                                        pin_memory=True,
-                                       prefetch_factor=batch_size)
+                                       prefetch_factor=2 * batch_size)

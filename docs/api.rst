@@ -3,9 +3,8 @@
 Developer Interface
 ===================
 
-This part of the documentation covers all the interfaces of Requests. For
-parts where Requests depends on external libraries, we document the most
-important right here and provide links to the canonical documentation.
+This is the documentation of the classes and functions used in this project.
+Not all of them are included, but the goal is to include all critical parts.
 
 .. automodule:: colorization
    :members:

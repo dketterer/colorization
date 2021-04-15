@@ -20,6 +20,13 @@ Indices and tables
 * :ref:`search`
 
 
+The Trainings Guide
+-------------------
+
+.. toctree::
+
+   recipe
+
 The API Documentation / Guide
 -----------------------------
 

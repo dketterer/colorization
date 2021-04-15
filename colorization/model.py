@@ -9,7 +9,7 @@ import colorization.backbones as backbones_mod
 
 
 class Model(nn.Module):
-    def __init__(self, backbone_name='UNet_bc64_d4', head_type='regression'):
+    def __init__(self, backbone_name='ResUNet50_bc64', head_type='regression'):
         super(Model, self).__init__()
 
         self.name = f'ColorModel-{backbone_name}'
@@ -39,6 +39,7 @@ class Model(nn.Module):
         return '\n'.join([
             f'     model: {self.name}',
             f'  backbone: {self.backbone_name}',
+            f'      head: {self.head_type}',
         ])
 
     def save(self, state):

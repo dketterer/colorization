@@ -29,6 +29,7 @@ def parse_args(args):
                               help='Weight regularization', default=0.)
     parser_train.add_argument('--momentum', metavar='value', type=float, help='SGD Optimizer Momentum', default=0.9)
     parser_train.add_argument('--epochs', metavar='value', type=int, help='Epochs until end', default=1)
+    parser_train.add_argument('--debug', action='store_true', help='No shuffle')
 
     parser_infer = subparsers.add_parser('infer', help='run inference on data')
     parser_infer.add_argument('model', type=str, help='path to output model or checkpoint to resume from')
@@ -82,7 +83,8 @@ def main(args):
 
         train.train(model=model, state=state, train_data_path=args.images, val_data_path=args.val_images,
                     transform_file=args.transform, growing_parameters=growing_parameters, lr=args.lr,
-                    regularization_l2=args.regularization_l2, epochs=args.epochs, verbose=args.verbose)
+                    regularization_l2=args.regularization_l2, epochs=args.epochs, verbose=args.verbose,
+                    debug=args.debug)
 
     elif args.command == 'infer':
         infer.infer(model=model,
@@ -90,6 +92,7 @@ def main(args):
                     target_path=args.target_path,
                     batch_size=args.batch_size,
                     img_limit=args.img_limit,
+                    transform=None,
                     debug=args.debug)
 
 

@@ -4,6 +4,8 @@ In this project I colorize black-and-white images with the help of neural networ
 I started it as a research project for the University Esslingen but try to further maintain and develop it.  
 The repository contains the code to train and run a colorization U-Net.
 
+**There is an ongoing rewrite in pytorch in a separate [branch](https://github.com/dketterer/colorization/tree/pytorch-rewrite).**
+
 
 ![Overview](docs/colorization.png)
 

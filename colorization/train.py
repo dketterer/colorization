@@ -23,7 +23,7 @@ from colorization.data import ImagenetData, get_trainloader
 from colorization.model import Model
 from colorization.preprocessing import to_tensor_l, to_tensor_ab
 from colorization.infer import infer
-from colorization.metrics import PSNR
+from colorization.metrics import PSNR, SSIM
 
 
 def imshow(img):
@@ -195,7 +195,7 @@ def train(model: Model,
                                  num_workers=4,
                                  pin_memory=True,
                                  prefetch_factor=1)
-        metrics = [criterion, PSNR()]
+        metrics = [criterion, PSNR(), SSIM()]
         with torch.no_grad():
             metric_results = get_validation_metrics(test_loader, model, metrics)
         for metric_result, metric in zip(metric_results, metrics):
@@ -207,7 +207,7 @@ def train(model: Model,
                                  target_path=os.path.join(model_dir, f'predictions-{epoch}'),
                                  batch_size=1,
                                  img_limit=20,
-                                 transform=transforms.get_val_transform(1024),
+                                 transform=None, # transforms.get_val_transform(1024),
                                  debug=True,
                                  tensorboard=True)
         for i, img in enumerate(predicted_images):

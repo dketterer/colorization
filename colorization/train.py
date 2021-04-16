@@ -1,3 +1,4 @@
+import copy
 import json
 import os
 import sys
@@ -65,14 +66,15 @@ def get_validation_metrics(validationloader, model, metrics=[]):
 
 
 def fill_growing_parameters(sparse, iterations):
-    assert 0 in sparse, 'Invalid growing parameters'
-    prev = sparse[0]
+    assert 0 in sparse, 'Invalid growing parameters, missing iteration 0'
+    filled = copy.deepcopy(sparse)
+    prev = filled[0]
     for i in range(iterations):
-        if i not in sparse:
-            sparse[i] = prev
+        if i not in filled:
+            filled[i] = prev
         else:
-            prev = sparse[i]
-    return sparse
+            prev = filled[i]
+    return filled
 
 
 def load_growing_parameters(path):

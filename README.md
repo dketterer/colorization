@@ -33,10 +33,12 @@ pip install sphinx_rtd_theme
 ## Training
 
 ```
-usage: main.py train [-h] [--images path] [--val_images path] [--backbone BACKBONE] [--head_type store] [--lr value] [--regularization_l2 value] [--momentum value] [--epochs value] [--debug] model path
+usage: main.py train [-h] [--images path] [--val_images path] [--backbone BACKBONE] [--head_type HEAD_TYPE] [--lr value] [--regularization_l2 value] [--momentum value] [--optimizer selection] --iterations value
+                     [--val_iterations value] [--warmup iterations] [--milestones [iterations [iterations ...]]] --growing_parameters path [--debug]
+                     path path
 
 positional arguments:
-  model                 path to output model or checkpoint to resume from
+  path                  path to output model or checkpoint to resume from
   path                  path transform.py
 
 optional arguments:
@@ -44,21 +46,56 @@ optional arguments:
   --images path         path to images
   --val_images path     path to images
   --backbone BACKBONE   backbone model
-  --head_type store     head type
+  --head_type HEAD_TYPE
+                        head type
   --lr value            Learning rate
   --regularization_l2 value, -reg_l2 value
                         Weight regularization
   --momentum value      SGD Optimizer Momentum
-  --epochs value        Epochs until end
+  --optimizer selection
+                        The Optimizer
+  --iterations value, -iters value
+                        How many mini batches
+  --val_iterations value, -val_iters value
+                        Validation run after how many mini batches
+  --warmup iterations   numer of warmup iterations
+  --milestones [iterations [iterations ...]]
+                        List of iteration indices where learning rate decays
+  --growing_parameters path
+                        Json file with the params fpr batch size and image size
   --debug               No shuffle
-
 ```
 
 Example:
 
 ```bash
-python -m colorization.main --verbose train /mnt/data/checkpoints/colorization/growing/UNet_bc64_d4.pth /mnt/data/checkpoints/colorization/growing/transform.py --images ~/datasets/Imagenet/test --val_images ~/datasets/Imagenet/val --backbone UNet_bc64_d4 --epochs 30
+python -m colorization.main --verbose train Resnext50_UNet.pth \
+    transform.py \
+    --backbone Resnext50_UNet \
+    --images /mnt/data/datasets/ILSVRC2017_CLS-LOC/ILSVRC/Data/CLS-LOC/train \
+    --val_images /mnt/data/datasets/ILSVRC2017_CLS-LOC/ILSVRC/Data/CLS-LOC/val \
+    --lr 0.0003 \
+    --growing_parameters growing_parameters.json \
+    --iterations 70000 \
+    --milestones 30000 55000 \
+    --warmup 3000 \
+    --val_iterations 3500
+    
 ```
+
+Examples for [growing_parameters.json](resources/growing_parameters.json) and 
+[transform.py](resources/transform.py) are in the resources folder.
+
+Growing parameters lets you define a batch size and image size starting from an iteration:  
+Elements are: `"iteration": [batch_size, width, height]`.
+```
+{
+	"0": [128, 128, 128],
+	"10000": [64, 256, 256]
+}
+```
+
+
 
 ## Inference / Testing
 
@@ -72,9 +109,9 @@ optional arguments:
   -h, --help          show this help message and exit
   --images path       path to images
   --target_path path  path to images
-  --batch_size value  Epochs until end
-  --img_limit value   Epochs until end
-  --debug             Epochs until end
+  --batch_size value  Batch size
+  --img_limit value   Only first N images in the folder
+  --debug             Stich original image, grey and predicted together
 ```
 
 ## Unittest

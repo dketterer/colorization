@@ -19,17 +19,18 @@ def parse_args(args):
     subparsers.required = True
 
     parser_train = subparsers.add_parser('train', help='train a network')
-    parser_train.add_argument('model', type=str, help='path to output model or checkpoint to resume from')
+    parser_train.add_argument('model', metavar='path', type=str,
+                              help='path to output model or checkpoint to resume from')
     parser_train.add_argument('transform', metavar='path', type=str, help='path transform.py')
     parser_train.add_argument('--images', metavar='path', type=str, help='path to images', default='.')
     parser_train.add_argument('--val_images', metavar='path', type=str, help='path to images', default='.')
     parser_train.add_argument('--backbone', action='store', type=str, help='backbone model', default='UNet_bc64_d4')
-    parser_train.add_argument('--head_type', metavar='store', type=str, help='head type', default='regression')
+    parser_train.add_argument('--head_type', type=str, help='head type', default='regression')
     parser_train.add_argument('--lr', metavar='value', type=float, help='Learning rate', default=0.0003)
     parser_train.add_argument('--regularization_l2', '-reg_l2', metavar='value', type=float,
                               help='Weight regularization', default=0.)
     parser_train.add_argument('--momentum', metavar='value', type=float, help='SGD Optimizer Momentum', default=0.9)
-    parser_train.add_argument('--optimizer', metavar='value', help='The Optimizer', type=str, default='sgd',
+    parser_train.add_argument('--optimizer', metavar='selection', help='The Optimizer', type=str, default='sgd',
                               choices=['adam', 'sgd'])
     parser_train.add_argument('--iterations', '-iters', metavar='value', type=int, help='How many mini batches',
                               required=True)
@@ -37,9 +38,9 @@ def parse_args(args):
                               help='Validation run after how many mini batches', default=3000)
     parser_train.add_argument('--warmup', metavar='iterations', help='numer of warmup iterations', type=int,
                               default=1000)
-    parser_train.add_argument('--milestones', action='store', type=int, nargs='*',
+    parser_train.add_argument('--milestones', metavar='iterations', action='store', type=int, nargs='*',
                               help='List of iteration indices where learning rate decays', default=[60000, 80000])
-    parser_train.add_argument('--growing_parameters', type=str,
+    parser_train.add_argument('--growing_parameters', metavar='path', type=str,
                               help='Json file with the params fpr batch size and image size', required=True)
     parser_train.add_argument('--debug', action='store_true', help='No shuffle')
 

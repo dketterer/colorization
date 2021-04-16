@@ -1,2 +1,2 @@
-from .psnr import PSNR
-from .ssim import SSIM
+from .psnr import *
+from .ssim import *

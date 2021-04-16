@@ -6,6 +6,7 @@ import torch
 
 import colorization.infer as infer
 import colorization.train as train
+from colorization.chkpt_utils import get_latest
 from colorization.model import Model
 
 
@@ -28,28 +29,41 @@ def parse_args(args):
     parser_train.add_argument('--regularization_l2', '-reg_l2', metavar='value', type=float,
                               help='Weight regularization', default=0.)
     parser_train.add_argument('--momentum', metavar='value', type=float, help='SGD Optimizer Momentum', default=0.9)
-    parser_train.add_argument('--epochs', metavar='value', type=int, help='Epochs until end', default=1)
+    parser_train.add_argument('--optimizer', metavar='value', help='The Optimizer', type=str, default='sgd',
+                              choices=['adam', 'sgd'])
+    parser_train.add_argument('--iterations', '-iters', metavar='value', type=int, help='How many mini batches',
+                              required=True)
+    parser_train.add_argument('--val_iterations', '-val_iters', metavar='value', type=int,
+                              help='Validation run after how many mini batches', default=3000)
+    parser_train.add_argument('--warmup', metavar='iterations', help='numer of warmup iterations', type=int,
+                              default=1000)
+    parser_train.add_argument('--milestones', action='store', type=int, nargs='*',
+                              help='List of iteration indices where learning rate decays', default=[60000, 80000])
+    parser_train.add_argument('--growing_parameters', type=str,
+                              help='Json file with the params fpr batch size and image size', required=True)
     parser_train.add_argument('--debug', action='store_true', help='No shuffle')
 
     parser_infer = subparsers.add_parser('infer', help='run inference on data')
     parser_infer.add_argument('model', type=str, help='path to output model or checkpoint to resume from')
     parser_infer.add_argument('--images', metavar='path', type=str, help='path to images', default='.')
     parser_infer.add_argument('--target_path', metavar='path', type=str, help='path to images', default='predictions')
-    parser_infer.add_argument('--batch_size', metavar='value', type=int, help='Epochs until end', default=8)
-    parser_infer.add_argument('--img_limit', metavar='value', type=int, help='Epochs until end', default=50)
-    parser_infer.add_argument('--debug', action='store_true', help='Epochs until end')
+    parser_infer.add_argument('--batch_size', metavar='value', type=int, help='Batch size', default=8)
+    parser_infer.add_argument('--img_limit', metavar='value', type=int, help='Only first N images in the folder',
+                              default=50)
+    parser_infer.add_argument('--debug', action='store_true', help='Stich original image, grey and predicted together')
 
     parsed_args = parser.parse_args(args)
     return parsed_args
 
 
 def load_model(args, verbose=False):
-    if args.command != 'train' and not os.path.isfile(args.model):
+    model_path = get_latest(args.model)
+    if args.command != 'train' and not model_path:
         raise RuntimeError('Model file {} does not exist!'.format(args.model))
 
     _, ext = os.path.splitext(args.model)
 
-    if args.command == 'train' and not os.path.exists(args.model):
+    if args.command == 'train' and not model_path:
         if verbose:
             print('Initializing model...')
         model = Model(backbone_name=args.backbone, head_type=args.head_type)
@@ -58,8 +72,9 @@ def load_model(args, verbose=False):
         if verbose: print(model)
 
     elif ext == '.pth' or ext == '.torch':
-        if verbose: print('Loading model from {}...'.format(os.path.basename(args.model)))
-        model, state = Model.load(args.model)
+        if verbose: print('Loading model from {}...'.format(os.path.basename(model_path)))
+        model, state = Model.load(model_path)
+        state.update({'path': args.model})
         if verbose: print(model)
 
     else:
@@ -79,12 +94,12 @@ def main(args):
         print(f'Use CUDA backend: {torch.cuda.get_device_name()}')
 
     if args.command == 'train':
-        growing_parameters = {0: (8, (256, 256))}
-
         train.train(model=model, state=state, train_data_path=args.images, val_data_path=args.val_images,
-                    transform_file=args.transform, growing_parameters=growing_parameters, lr=args.lr,
-                    regularization_l2=args.regularization_l2, epochs=args.epochs, verbose=args.verbose,
-                    debug=args.debug)
+                    transform_file=args.transform, growing_parameters=args.growing_parameters,
+                    optimizer_name=args.optimizer,
+                    lr=args.lr, regularization_l2=args.regularization_l2, iterations=args.iterations,
+                    val_iterations=args.val_iterations,
+                    warmup=args.warmup, verbose=args.verbose, debug=args.debug)
 
     elif args.command == 'infer':
         infer.infer(model=model,

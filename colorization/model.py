@@ -1,9 +1,9 @@
-import math
 import os
 
 import torch
 import torch.nn as nn
 
+from colorization.chkpt_utils import build_model_file_name
 from colorization.backbones.heads import OutConv
 import colorization.backbones as backbones_mod
 
@@ -42,18 +42,22 @@ class Model(nn.Module):
             f'      head: {self.head_type}',
         ])
 
-    def save(self, state):
+    def save(self, state, iteration):
         checkpoint = {
             'backbone_name': self.backbone_name,
             'head_type': self.head_type,
             'state_dict': self.state_dict()
         }
 
-        for key in ('epoch', 'optimizer', 'scheduler', 'loss'):
+        for key in ('epoch', 'optimizer', 'scheduler', 'iteration'):
             if key in state:
                 checkpoint[key] = state[key]
 
-        torch.save(checkpoint, state['path'])
+        # get real concrete save path:
+        concrete_path = build_model_file_name(state['path'], iteration)
+        assert not os.path.isfile(concrete_path)
+
+        torch.save(checkpoint, concrete_path)
 
     @classmethod
     def load(cls, filename):
@@ -66,7 +70,7 @@ class Model(nn.Module):
         model.load_state_dict(checkpoint['state_dict'])
 
         state = {}
-        for key in ('epoch', 'optimizer', 'scheduler', 'loss'):
+        for key in ('epoch', 'optimizer', 'scheduler', 'iteration'):
             if key in checkpoint:
                 state[key] = checkpoint[key]
 

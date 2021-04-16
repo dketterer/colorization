@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 import time
@@ -20,10 +21,11 @@ from torch.cuda.amp import GradScaler, autocast
 from torchvision.transforms import ToTensor, Compose, Normalize
 
 from colorization.data import ImagenetData, get_trainloader
+from colorization.chkpt_utils import delete_older_then_n
 from colorization.model import Model
 from colorization.preprocessing import to_tensor_l, to_tensor_ab
 from colorization.infer import infer
-from colorization.metrics import PSNR, SSIM
+from colorization.metrics import PSNR, SSIM, psnr_func
 
 
 def imshow(img):
@@ -45,7 +47,7 @@ def imshow(img):
 def get_validation_metrics(validationloader, model, metrics=[]):
     model = model.eval()
     metrics_results = torch.zeros(len(metrics)).cuda()
-    for i, data in enumerate(tqdm(validationloader)):
+    for i, data in enumerate(tqdm(validationloader, leave=False, desc='Validation')):
         if i == 20000:
             break
         inputs, labels = data
@@ -62,15 +64,23 @@ def get_validation_metrics(validationloader, model, metrics=[]):
     return metrics_results.numpy().tolist()
 
 
-def fill_growing_parameters(sparse, epochs):
+def fill_growing_parameters(sparse, iterations):
     assert 0 in sparse, 'Invalid growing parameters'
     prev = sparse[0]
-    for i in range(epochs):
+    for i in range(iterations):
         if i not in sparse:
             sparse[i] = prev
         else:
             prev = sparse[i]
     return sparse
+
+
+def load_growing_parameters(path):
+    with open(path, 'r') as f:
+        loaded_params = json.load(f)
+    spares_params = {int(k): (v[0], (v[1], v[2])) for k, v in loaded_params.items()}
+
+    return spares_params
 
 
 def train(model: Model,
@@ -80,25 +90,25 @@ def train(model: Model,
           transform_file: str,
           growing_parameters: dict,
           lr: float,
-          epochs: int,
+          iterations: int,
+          val_iterations: int,
           verbose: bool,
           regularization_l2: float = 0.,
+          warmup=5000,
           milestones=[],
-          print_every: int = 10,
+          optimizer_name: str = 'adam',
+          print_every: int = 2,
           debug=False):
     model.train()
-    batch_size = 4
-    input_size = (512, 512)
 
-    growing_parameters = fill_growing_parameters(growing_parameters, epochs)
+    sparse_growing_parameters = load_growing_parameters(growing_parameters)
+    filled_growing_parameters = fill_growing_parameters(sparse_growing_parameters, iterations)
 
     assert os.path.isfile(transform_file)
     sys.path.insert(0, os.path.dirname(transform_file))
     transforms = __import__(os.path.splitext(os.path.basename(transform_file))[0])
 
-    transform = transforms.get_transform(input_size[0])
-
-    trainset = ImagenetData(train_data_path, transform=transform, transform_l=to_tensor_l, transform_ab=to_tensor_ab)
+    trainset = ImagenetData(train_data_path, transform=None, transform_l=to_tensor_l, transform_ab=to_tensor_ab)
     testset = ImagenetData(val_data_path, transform=transforms.get_val_transform(1024), transform_l=to_tensor_l,
                            transform_ab=to_tensor_ab)
 
@@ -114,18 +124,19 @@ def train(model: Model,
     if torch.cuda.is_available():
         model = model.cuda()
         criterion = criterion.cuda()
-    # lr: 0.0003
-    # momentum = 0.9
-    optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=regularization_l2)
+
+    if optimizer_name == 'adam':
+        optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=regularization_l2)
+    elif optimizer_name == 'sgd':
+        optimizer = optim.SGD(model.parameters(), lr=lr, weight_decay=regularization_l2, momentum=0.9)
+    else:
+        raise NotImplementedError(f'Optimizer {optimizer_name} not available')
     if 'optimizer' in state:
         optimizer.load_state_dict(state['optimizer'])
 
     scaler = GradScaler(enabled=True)
     if 'scaler' in state:
         scaler.load_state_dict(state['scaler'])
-    start_epoch = state.get('epoch', -1) + 1
-    image_iter = state.get('image_iter', 0)
-    warmup = True
 
     def schedule(train_iter):
         if warmup and train_iter <= warmup:
@@ -135,24 +146,33 @@ def train(model: Model,
     scheduler = LambdaLR(optimizer, schedule)
     if 'scheduler' in state:
         scheduler.load_state_dict(state['scheduler'])
+    iteration = state.get('iteration', 0)
+    epoch = state.get('epoch', 0)
 
-    for epoch in range(start_epoch, epochs):  # loop over the dataset multiple times
-        # change batch size and input size
-        if epoch not in growing_parameters:
-            raise
-        batch_size, input_size = growing_parameters[epoch]
-        trainset.transform = transforms.get_transform(input_size[0])
-        trainloader = get_trainloader(trainset, batch_size, shuffle=not debug)
+    print(f'  Iteration: {iteration}/{iterations}')
+    print(f'      Epoch: {epoch}')
+    batch_size, input_size = filled_growing_parameters[iteration]
+    trainset.transform = transforms.get_transform(input_size[0])
+    trainloader = get_trainloader(trainset, batch_size, shuffle=not debug)
 
-        print(f'Start epoch {epoch + 1} with batch size: {batch_size} and image size: {input_size[0]}x{input_size[1]}')
-        running_loss = 0.0
-        tic = time.time()
-
-        pbar = tqdm(trainloader)
+    running_loss, running_psnr, avg_running_loss, img_per_sec = 0.0, 0.0, 0.0, 0.0
+    tic = time.time()
+    changed = True
+    pbar = tqdm(total=iterations, initial=iteration)
+    while iteration < iterations:
         pbar.set_description(
-            f'[{epoch + 1}/{epochs}, 1] loss: -- - -- img/s')
-        for i, data in enumerate(pbar):
-            image_iter += batch_size
+            f'[Ep: {epoch} | B: {batch_size} | Im: {input_size[0]}x{input_size[1]}] loss: {avg_running_loss:.3f} - {img_per_sec:.2f} img/s')
+        for data in trainloader:
+            if iteration in sparse_growing_parameters and not changed:
+                # change batch size and input size
+                batch_size, input_size = sparse_growing_parameters[iteration]
+                trainset.transform = transforms.get_transform(input_size[0])
+                trainloader = get_trainloader(trainset, batch_size, shuffle=not debug)
+                epoch += 1
+                changed = True
+                break
+            else:
+                changed = False
 
             # get data
             inputs, labels = data
@@ -165,6 +185,7 @@ def train(model: Model,
             with autocast():
                 outputs = model(inputs)
                 loss = criterion(outputs, labels)
+                _psnr = psnr_func(outputs, labels)
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()
@@ -173,52 +194,67 @@ def train(model: Model,
 
             # print statistics
             running_loss += loss.item()
+            running_psnr += _psnr.item()
 
-            if i % print_every == print_every - 1:  # print every 2000 mini-batches
-                avg_running_loss = running_loss / print_every
-                global_step = epoch * len(trainloader) * batch_size + (i + 1) * batch_size
-                writer.add_scalar('train/MSE', avg_running_loss, global_step=global_step)
+            iteration += 1
 
+            if iteration % print_every == 0 or iteration == iterations:
                 img_per_sec = print_every * batch_size / (time.time() - tic)
-                writer.add_scalar('Performance/Images per second', img_per_sec, global_step=global_step)
-                pbar.set_description(
-                    f'[{epoch + 1}/{epochs}, {i + 1}] loss: {avg_running_loss:.3f} - {img_per_sec:.2f} img/s')
-                tic = time.time()
-                running_loss = 0.0
-        # run validation
-        tic = time.time()
-        global_step = (epoch + 1) * len(trainloader) * batch_size
-        model = model.eval()
-        test_loader = DataLoader(testset,
-                                 batch_size=1,
-                                 shuffle=False,
-                                 num_workers=4,
-                                 pin_memory=True,
-                                 prefetch_factor=1)
-        metrics = [criterion, PSNR(), SSIM()]
-        with torch.no_grad():
-            metric_results = get_validation_metrics(test_loader, model, metrics)
-        for metric_result, metric in zip(metric_results, metrics):
-            writer.add_scalar(f'validation/{metric.__class__.__name__}', metric_result, global_step=global_step)
 
-        print(f'Validation in {(time.time() - tic):.2f}s - loss: {metric_results[0]:.3f}')
-        predicted_images = infer(model=model,
-                                 image_path=val_data_path,
-                                 target_path=os.path.join(model_dir, f'predictions-{epoch}'),
-                                 batch_size=1,
-                                 img_limit=20,
-                                 transform=None, # transforms.get_val_transform(1024),
-                                 debug=True,
-                                 tensorboard=True)
-        for i, img in enumerate(predicted_images):
-            writer.add_image(f'example-{i}', img, global_step=global_step, dataformats='HWC')
-        model = model.train()
-    state.update({
-        'epoch': epoch,
-        'optimizer': optimizer.state_dict(),
-        'scaler': scaler.state_dict(),
-        'loss': loss,
-    })
-    model.save(state)
+                avg_running_loss = running_loss / print_every
+                avg_running_psnr = running_psnr / print_every
+
+                writer.add_scalar('train/MSE', avg_running_loss, global_step=iteration)
+                writer.add_scalar('train/PSNR', avg_running_psnr, global_step=iteration)
+
+                writer.add_scalar('Performance/Images per second', img_per_sec, global_step=iteration)
+                writer.add_scalar('Learning rate', optimizer.param_groups[0]['lr'], global_step=iteration)
+                pbar.set_description(
+                    f'[Ep: {epoch} | B: {batch_size} | Im: {input_size[0]}x{input_size[1]}] loss: {avg_running_loss:.3f} - {img_per_sec:.2f} img/s')
+
+                running_loss = 0.0
+                running_psnr = 0.0
+                state.update({
+                    'epoch': epoch,
+                    'iteration': iteration,
+                    'optimizer': optimizer.state_dict(),
+                    'scaler': scaler.state_dict()
+                })
+
+                model.save(state, iteration)
+                delete_older_then_n(state['path'], 10)
+
+                tic = time.time()
+            if iteration == iterations or iteration % val_iterations == 0:
+                # run validation
+                tic = time.time()
+                model = model.eval()
+                test_loader = DataLoader(testset,
+                                         batch_size=1,
+                                         shuffle=False,
+                                         num_workers=4,
+                                         pin_memory=True,
+                                         prefetch_factor=1)
+                metrics = [criterion, PSNR(), SSIM()]
+                with torch.no_grad():
+                    metric_results = get_validation_metrics(test_loader, model, metrics)
+                for metric_result, metric in zip(metric_results, metrics):
+                    writer.add_scalar(f'validation/{metric.__class__.__name__}', metric_result, global_step=iteration)
+
+                predicted_images = infer(model=model,
+                                         image_path=val_data_path,
+                                         target_path=os.path.join(model_dir, f'predictions-{iteration}'),
+                                         batch_size=1,
+                                         img_limit=20,
+                                         transform=transforms.get_val_transform(1024),
+                                         debug=True,
+                                         tensorboard=True)
+                for i, img in enumerate(predicted_images):
+                    writer.add_image(f'example-{i}', img, global_step=iteration, dataformats='HWC')
+                model = model.train()
+            pbar.update(1)
+
+        epoch += 1
+    pbar.close()
     writer.close()
     print('Finished Training')

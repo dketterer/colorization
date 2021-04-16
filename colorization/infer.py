@@ -50,7 +50,8 @@ def infer(model: Model,
     if not os.path.exists(target_path):
         os.makedirs(target_path, exist_ok=True)
 
-    dataset = ImagenetData(image_path, transform=transform, transform_l=to_tensor_l, transform_ab=to_tensor_ab, training=False)
+    dataset = ImagenetData(image_path, transform=transform, transform_l=to_tensor_l, transform_ab=to_tensor_ab,
+                           training=False)
     dataloader = DataLoader(dataset,
                             batch_size=batch_size,
                             shuffle=False,
@@ -64,7 +65,7 @@ def infer(model: Model,
     if torch.cuda.is_available():
         model = model.cuda()
 
-    pbar = tqdm(dataloader)
+    pbar = tqdm(dataloader, leave=not tensorboard)
     img_index = 0
     for i, data in enumerate(pbar):
         grey, _, img_orig, grey_orig = data

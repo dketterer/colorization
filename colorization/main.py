@@ -84,9 +84,6 @@ def load_model(args, verbose=False):
 
 
 def main(args):
-    if not os.path.exists(os.path.dirname(args.model)):
-        os.makedirs(os.path.dirname(args.model), exist_ok=True)
-
     model, state = load_model(args, verbose=args.verbose)
     # if model: model.share_memory()
 

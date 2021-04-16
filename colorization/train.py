@@ -99,7 +99,7 @@ def train(model: Model,
           warmup=5000,
           milestones=[],
           optimizer_name: str = 'adam',
-          print_every: int = 2,
+          print_every: int = 250,
           debug=False):
     model.train()
 

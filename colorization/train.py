@@ -21,7 +21,7 @@ import torch.optim as optim
 from torch.cuda.amp import GradScaler, autocast
 from torchvision.transforms import ToTensor, Compose, Normalize
 
-from colorization.data import ImagenetData, get_trainloader
+from colorization.data import ImagenetData, get_trainloader, SavableShuffleSampler
 from colorization.chkpt_utils import delete_older_then_n
 from colorization.model import Model
 from colorization.preprocessing import to_tensor_l, to_tensor_ab
@@ -134,10 +134,12 @@ def train(model: Model,
     else:
         raise NotImplementedError(f'Optimizer {optimizer_name} not available')
     if 'optimizer' in state:
+        print('loading optimizer...')
         optimizer.load_state_dict(state['optimizer'])
 
     scaler = GradScaler(enabled=True)
     if 'scaler' in state:
+        print('loading scaler...')
         scaler.load_state_dict(state['scaler'])
 
     def schedule(train_iter):
@@ -147,34 +149,45 @@ def train(model: Model,
 
     scheduler = LambdaLR(optimizer, schedule)
     if 'scheduler' in state:
+        print('loading scheduler...')
         scheduler.load_state_dict(state['scheduler'])
     iteration = state.get('iteration', 0)
     epoch = state.get('epoch', 0)
 
-    print(f'  Iteration: {iteration}/{iterations}')
-    print(f'      Epoch: {epoch}')
+    sampler = SavableShuffleSampler(trainset, shuffle=not debug)
+    if 'sampler' in state:
+        print('loading sampler...')
+        sampler.load_state_dict(state['sampler'])
+
+    print(f'   Iteration: {iteration}/{iterations}')
+    print(f'       Epoch: {epoch}')
+    print(f'      Warmup: {warmup}')
+    print(f'  Milestones: {milestones}')
+    print(f' Sampler idx: {sampler.index}')
+    print(f'Current step: {scheduler._step_count}')
+
     batch_size, input_size = filled_growing_parameters[iteration]
     trainset.transform = transforms.get_transform(input_size[0])
-    trainloader = get_trainloader(trainset, batch_size, shuffle=not debug)
+    trainloader = get_trainloader(trainset, batch_size, sampler)
 
     running_loss, running_psnr, avg_running_loss, img_per_sec = 0.0, 0.0, 0.0, 0.0
     tic = time.time()
-    changed = True
+    changed_batch_size = True
     pbar = tqdm(total=iterations, initial=iteration)
     while iteration < iterations:
         pbar.set_description(
             f'[Ep: {epoch} | B: {batch_size} | Im: {input_size[0]}x{input_size[1]}] loss: {avg_running_loss:.3f} - {img_per_sec:.2f} img/s')
         for data in trainloader:
-            if iteration in sparse_growing_parameters and not changed:
+            if iteration in sparse_growing_parameters and not changed_batch_size:
                 # change batch size and input size
                 batch_size, input_size = sparse_growing_parameters[iteration]
                 trainset.transform = transforms.get_transform(input_size[0])
-                trainloader = get_trainloader(trainset, batch_size, shuffle=not debug)
+                trainloader = get_trainloader(trainset, batch_size, sampler)
                 epoch += 1
-                changed = True
+                changed_batch_size = True
                 break
             else:
-                changed = False
+                changed_batch_size = False
 
             # get data
             inputs, labels = data
@@ -190,9 +203,10 @@ def train(model: Model,
                 _psnr = psnr_func(outputs, labels)
             scaler.scale(loss).backward()
             scaler.step(optimizer)
-            scaler.update()
 
             scheduler.step()
+
+            scaler.update()
 
             # print statistics
             running_loss += loss.item()
@@ -220,7 +234,9 @@ def train(model: Model,
                     'epoch': epoch,
                     'iteration': iteration,
                     'optimizer': optimizer.state_dict(),
-                    'scaler': scaler.state_dict()
+                    'scheduler': scheduler.state_dict(),
+                    'scaler': scaler.state_dict(),
+                    'sampler': sampler.state_dict()
                 })
 
                 model.save(state, iteration)
@@ -255,6 +271,8 @@ def train(model: Model,
                     writer.add_image(f'example-{i}', img, global_step=iteration, dataformats='HWC')
                 model = model.train()
             pbar.update(1)
+            if iteration == iterations:
+                break
 
         epoch += 1
     pbar.close()

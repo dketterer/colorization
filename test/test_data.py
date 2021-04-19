@@ -1,10 +1,13 @@
+import copy
 import unittest
 
 import cv2
 import numpy as np
+import torch
 
 from colorization import data
 from colorization.train import to_tensor_l, to_tensor_ab
+from data import SavableShuffleSampler
 
 
 class TestImagenetData(unittest.TestCase):
@@ -60,6 +63,40 @@ class TestImagenetData(unittest.TestCase):
             np.testing.assert_allclose(ab.numpy().squeeze(), np.array([0., 0.]), atol=0.05, rtol=0.001)
         except Exception:
             self.fail()
+
+    def test_SaveableSampler(self):
+        data = list(range(10))
+
+        sampler = SavableShuffleSampler(data)
+        next(iter(sampler))
+
+        seq = copy.deepcopy(sampler.seq)
+
+        state = sampler.state_dict()
+        del sampler
+
+        new_sampler = SavableShuffleSampler(data)
+        new_sampler.load_state_dict(state)
+
+        self.assertEqual(1, new_sampler.index)
+        self.assertTrue(torch.all(torch.eq(seq, new_sampler.seq)))
+
+        # consume the rest of the sampler
+        iterator = iter(new_sampler)
+        for _ in range(9):
+            next(iterator)
+
+        # trigger reshuffle
+        next(iter(new_sampler))
+
+        self.assertFalse(torch.all(torch.eq(seq, new_sampler.seq)))
+
+        # test no shuffle mode
+        no_shuffle_sampler = SavableShuffleSampler(data, shuffle=False)
+
+        result = [idx for idx in no_shuffle_sampler]
+
+        self.assertEqual(data, result)
 
 
 if __name__ == '__main__':

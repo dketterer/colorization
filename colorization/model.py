@@ -29,10 +29,11 @@ class Model(nn.Module):
         return x
 
     def initialize(self):
-
+        print('Init backbone')
         self.backbone.initialize()
 
         # Initialize head
+        print('Init head')
         self.head.initialize()
 
     def __repr__(self):
@@ -49,7 +50,7 @@ class Model(nn.Module):
             'state_dict': self.state_dict()
         }
 
-        for key in ('epoch', 'optimizer', 'scheduler', 'iteration'):
+        for key in ('epoch', 'optimizer', 'scheduler', 'iteration', 'scaler', 'sampler'):
             if key in state:
                 checkpoint[key] = state[key]
 
@@ -70,7 +71,7 @@ class Model(nn.Module):
         model.load_state_dict(checkpoint['state_dict'])
 
         state = {}
-        for key in ('epoch', 'optimizer', 'scheduler', 'iteration'):
+        for key in ('epoch', 'optimizer', 'scheduler', 'iteration', 'scaler', 'sampler'):
             if key in checkpoint:
                 state[key] = checkpoint[key]
 

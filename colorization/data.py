@@ -1,11 +1,11 @@
 import os
-from typing import Callable
+from typing import Callable, Optional, Sized
 
 import cv2
 import numpy as np
 import torch
 
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, Sampler
 import matplotlib.pyplot as plt
 
 from colorization.preprocessing import split_channels
@@ -94,10 +94,49 @@ class ImagenetData(Dataset):
         return greys_stacked, abs_stacked
 
 
-def get_trainloader(dataset, batch_size, shuffle=True):
+def get_trainloader(dataset, batch_size, sampler):
     return torch.utils.data.DataLoader(dataset,
                                        batch_size=batch_size,
-                                       shuffle=shuffle,
+                                       sampler=sampler,
                                        num_workers=4,
                                        pin_memory=True,
-                                       prefetch_factor=2 * batch_size)
+                                       prefetch_factor=2)
+
+
+class SavableShuffleSampler(Sampler):
+    def __init__(self, data_source: Optional[Sized], shuffle=True):
+        super().__init__(data_source)
+        self.data_source = data_source
+        self.generator = torch.Generator()
+        self.generator.manual_seed(1337)
+        self.do_shuffle = shuffle
+
+        self.new_seq()
+
+    def new_seq(self):
+        self.index = 0
+        if self.do_shuffle:
+            self.seq = torch.randperm(len(self.data_source), generator=self.generator)
+        else:
+            self.seq = torch.arange(len(self.data_source))
+
+    def __iter__(self):
+        if self.index >= len(self.seq):
+            self.new_seq()
+
+        while self.index < len(self.seq):
+            self.index += 1
+            yield self.seq[self.index - 1]
+
+    def __len__(self):
+        return len(self.seq)
+
+    def state_dict(self):
+        return {'seq': self.seq, 'index': self.index, 'generator': self.generator.get_state(),
+                'do_shuffle': self.do_shuffle}
+
+    def load_state_dict(self, state_dict):
+        self.seq = state_dict['seq']
+        self.index = state_dict['index']
+        self.generator.set_state(state_dict['generator'])
+        self.do_shuffle = state_dict['do_shuffle']

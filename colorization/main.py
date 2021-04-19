@@ -39,7 +39,7 @@ def parse_args(args):
     parser_train.add_argument('--warmup', metavar='iterations', help='numer of warmup iterations', type=int,
                               default=1000)
     parser_train.add_argument('--milestones', metavar='iterations', action='store', type=int, nargs='*',
-                              help='List of iteration indices where learning rate decays', default=[60000, 80000])
+                              help='List of iteration indices where learning rate decays', default=[])
     parser_train.add_argument('--growing_parameters', metavar='path', type=str,
                               help='Json file with the params fpr batch size and image size', required=True)
     parser_train.add_argument('--debug', action='store_true', help='No shuffle')
@@ -96,7 +96,7 @@ def main(args):
                     transform_file=args.transform, growing_parameters=args.growing_parameters,
                     optimizer_name=args.optimizer,
                     lr=args.lr, regularization_l2=args.regularization_l2, iterations=args.iterations,
-                    val_iterations=args.val_iterations,
+                    val_iterations=args.val_iterations, milestones=args.milestones,
                     warmup=args.warmup, verbose=args.verbose, debug=args.debug)
 
     elif args.command == 'infer':

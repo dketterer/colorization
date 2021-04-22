@@ -7,7 +7,7 @@ import torch
 
 from colorization import data
 from colorization.train import to_tensor_l, to_tensor_ab
-from data import SavableShuffleSampler
+from colorization.data import SavableShuffleSampler
 
 
 class TestImagenetData(unittest.TestCase):

@@ -103,6 +103,9 @@ def train(model: Model,
           debug=False):
     model.train()
 
+    if debug:
+        print_every = 10
+
     sparse_growing_parameters = load_growing_parameters(growing_parameters)
     filled_growing_parameters = fill_growing_parameters(sparse_growing_parameters, iterations)
 
@@ -120,6 +123,8 @@ def train(model: Model,
 
     if model.head_type == 'regression':
         criterion = torch.nn.MSELoss()
+    elif model.head_type == 'regression-sum':
+        criterion = torch.nn.MSELoss(reduction='sum')
     else:
         raise NotImplementedError()
 
@@ -159,7 +164,6 @@ def train(model: Model,
         sampler.load_state_dict(state['sampler'])
 
     print(f'   Iteration: {iteration}/{iterations}')
-    print(f'       Epoch: {epoch}')
     print(f'      Warmup: {warmup}')
     print(f'  Milestones: {milestones}')
     print(f'     Growing: {sparse_growing_parameters}')
@@ -202,10 +206,9 @@ def train(model: Model,
                 _psnr = psnr_func(outputs, labels)
             scaler.scale(loss).backward()
             scaler.step(optimizer)
+            scaler.update()
 
             scheduler.step()
-
-            scaler.update()
 
             # print statistics
             running_loss += loss.item()

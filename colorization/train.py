@@ -152,7 +152,6 @@ def train(model: Model,
         print('loading scheduler...')
         scheduler.load_state_dict(state['scheduler'])
     iteration = state.get('iteration', 0)
-    epoch = state.get('epoch', 0)
 
     sampler = SavableShuffleSampler(trainset, shuffle=not debug)
     if 'sampler' in state:
@@ -163,6 +162,7 @@ def train(model: Model,
     print(f'       Epoch: {epoch}')
     print(f'      Warmup: {warmup}')
     print(f'  Milestones: {milestones}')
+    print(f'     Growing: {sparse_growing_parameters}')
     print(f' Sampler idx: {sampler.index}')
     print(f'Current step: {scheduler._step_count}')
 
@@ -176,14 +176,13 @@ def train(model: Model,
     pbar = tqdm(total=iterations, initial=iteration)
     while iteration < iterations:
         pbar.set_description(
-            f'[Ep: {epoch} | B: {batch_size} | Im: {input_size[0]}x{input_size[1]}] loss: {avg_running_loss:.3f} - {img_per_sec:.2f} img/s')
+            f'[Ep: {sampler.epoch} | B: {batch_size} | Im: {input_size[0]}x{input_size[1]}] loss: {avg_running_loss:.3f} - {img_per_sec:.2f} img/s')
         for data in trainloader:
             if iteration in sparse_growing_parameters and not changed_batch_size:
                 # change batch size and input size
                 batch_size, input_size = sparse_growing_parameters[iteration]
                 trainset.transform = transforms.get_transform(input_size[0])
                 trainloader = get_trainloader(trainset, batch_size, sampler)
-                epoch += 1
                 changed_batch_size = True
                 break
             else:
@@ -226,12 +225,11 @@ def train(model: Model,
                 writer.add_scalar('Performance/Images per second', img_per_sec, global_step=iteration)
                 writer.add_scalar('Learning rate', optimizer.param_groups[0]['lr'], global_step=iteration)
                 pbar.set_description(
-                    f'[Ep: {epoch} | B: {batch_size} | Im: {input_size[0]}x{input_size[1]}] loss: {avg_running_loss:.3f} - {img_per_sec:.2f} img/s')
+                    f'[Ep: {sampler.epoch} | B: {batch_size} | Im: {input_size[0]}x{input_size[1]}] loss: {avg_running_loss:.3f} - {img_per_sec:.2f} img/s')
 
                 running_loss = 0.0
                 running_psnr = 0.0
                 state.update({
-                    'epoch': epoch,
                     'iteration': iteration,
                     'optimizer': optimizer.state_dict(),
                     'scheduler': scheduler.state_dict(),
@@ -274,7 +272,6 @@ def train(model: Model,
             if iteration == iterations:
                 break
 
-        epoch += 1
     pbar.close()
     writer.close()
     print('Finished Training')

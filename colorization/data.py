@@ -109,12 +109,14 @@ class SavableShuffleSampler(Sampler):
         self.data_source = data_source
         self.generator = torch.Generator()
         self.generator.manual_seed(1337)
+        self.epoch = 0
         self.do_shuffle = shuffle
 
         self.new_seq()
 
     def new_seq(self):
         self.index = 0
+        self.epoch += 1
         if self.do_shuffle:
             self.seq = torch.randperm(len(self.data_source), generator=self.generator)
         else:
@@ -133,10 +135,11 @@ class SavableShuffleSampler(Sampler):
 
     def state_dict(self):
         return {'seq': self.seq, 'index': self.index, 'generator': self.generator.get_state(),
-                'do_shuffle': self.do_shuffle}
+                'do_shuffle': self.do_shuffle, 'epoch': self.epoch}
 
     def load_state_dict(self, state_dict):
         self.seq = state_dict['seq']
         self.index = state_dict['index']
         self.generator.set_state(state_dict['generator'])
         self.do_shuffle = state_dict['do_shuffle']
+        self.epoch = state_dict.get('epoch', 0)

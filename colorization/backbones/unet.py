@@ -1,7 +1,7 @@
 from torch import nn
 
 from colorization.backbones.utils import register
-from .unetparts import DoubleConv, Down, Up
+from colorization.backbones.unetparts import DoubleConv, Down, Up
 
 
 class UNet(nn.Module):
@@ -38,6 +38,16 @@ class UNet(nn.Module):
         for layer, intermediate in zip(self.ups, intermediates[::-1]):
             x = layer(x, intermediate)
         return x
+
+    def initialize(self):
+
+        def init_layer(layer):
+            if isinstance(layer, nn.Conv2d):
+                nn.init.xavier_uniform_(layer.weight)
+                if layer.bias is not None:
+                    nn.init.constant_(layer.bias, val=0)
+
+        self.apply(init_layer)
 
 
 @register

@@ -1,4 +1,3 @@
-import torchvision
 from torchvision.models import resnet as vrn
 import torch.utils.model_zoo as model_zoo
 
@@ -12,12 +11,8 @@ class ResNet(vrn.ResNet):
         self.bottleneck = bottleneck
         self.url = url
 
-        # torchvision added support for ResNeXt in version 0.3.0,
-        # and introduces additional args to torchvision.models.resnet constructor
-        kwargs_common = {'block': bottleneck, 'layers': layers}
-        kwargs_extra = {'groups': groups,
-                        'width_per_group': width_per_group} if torchvision.__version__ > '0.2.1' else {}
-        kwargs = {**kwargs_common, **kwargs_extra}
+        kwargs = {'block': bottleneck, 'layers': layers, 'groups': groups,
+                  'width_per_group': width_per_group}
         super().__init__(**kwargs)
 
     def initialize(self):

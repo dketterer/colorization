@@ -1,5 +1,7 @@
 from torch import nn
+from torch.cuda.amp import autocast
 from torchvision.models import densenet
+import torch.nn.functional as F
 
 from colorization.backbones.densenet import DenseNet
 from colorization.backbones.utils import register
@@ -46,8 +48,23 @@ class DenseNetUNetRDB(nn.Module):
         self.conv_3x3 = nn.Conv2d(channels[0], channels[0], kernel_size=3, padding=1)
 
     def forward(self, x):
-        # need 3 channels for the pretrained resnet
+        # pad to multiples of 32
+        pad_to = 32
+        w, h = x.size()[2:]
+        w_padded = w + pad_to - w % pad_to if w % pad_to != 0 else w
+        h_padded = h + pad_to - h % pad_to if h % pad_to != 0 else h
+        diffY = w_padded - w
+        diffX = h_padded - h
+        if diffX > 0 or diffY > 0:
+            # Hack for https://github.com/pytorch/pytorch/issues/13058
+            with autocast(enabled=False):
+                x = x.float()
+
+                x = F.pad(x, [diffX // 2, diffX - diffX // 2,
+                              diffY // 2, diffY - diffY // 2])
+
         orig = x
+        # need 3 channels for the pretrained resnet
         x = x.repeat(1, 3, 1, 1)
         c1, c2, c3, c4, c5 = self.features(x)
 
@@ -64,6 +81,10 @@ class DenseNetUNetRDB(nn.Module):
         # need the orig just for the size
         x = self.last_up(x, orig)
         x = self.conv_3x3(x)
+
+        if diffX > 0 or diffY > 0:
+            # remove the pad
+            x = x[:, :, diffY // 2:x.size()[2] - (diffY - diffY // 2), diffX // 2:x.size()[3] - (diffX - diffX // 2)]
 
         return x
 

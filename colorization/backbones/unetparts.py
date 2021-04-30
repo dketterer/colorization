@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import nn
+from torch.cuda.amp import autocast
 from torch.nn import functional as F
 from torchvision.models.resnet import BasicBlock, Bottleneck
 
@@ -100,7 +101,12 @@ class UpPad(nn.Module):
         diffY = x2.size()[2] - x1.size()[2]
         diffX = x2.size()[3] - x1.size()[3]
 
-        x1 = F.pad(x1, [diffX // 2, diffX - diffX // 2,
-                        diffY // 2, diffY - diffY // 2])
+        if diffX > 0 or diffY > 0:
+            # Hack for https://github.com/pytorch/pytorch/issues/13058
+            with autocast(enabled=False):
+                x1 = x1.float()
+
+                x1 = F.pad(x1, [diffX // 2, diffX - diffX // 2,
+                                diffY // 2, diffY - diffY // 2])
 
         return x1

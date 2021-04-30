@@ -3,10 +3,14 @@ import json
 import os
 import sys
 import time
+from collections import defaultdict
+
 import numpy as np
 from torch.optim.lr_scheduler import LambdaLR
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
+
+from colorization.loss import L2Loss, L1Loss, L2CCLoss, L1CCLoss, ColorConsistencyLoss
 
 np.random.seed(0)
 import torch
@@ -21,7 +25,7 @@ import torch.optim as optim
 from torch.cuda.amp import GradScaler, autocast
 from torchvision.transforms import ToTensor, Compose, Normalize
 
-from colorization.data import ImagenetData, get_trainloader, SavableShuffleSampler
+from colorization.data import ImagenetData, ImagenetColorSegmentData, get_trainloader, SavableShuffleSampler
 from colorization.chkpt_utils import delete_older_then_n
 from colorization.model import Model
 from colorization.preprocessing import to_tensor_l, to_tensor_ab
@@ -45,24 +49,41 @@ def imshow(img):
     plt.show()
 
 
-def get_validation_metrics(validationloader, model, metrics=[]):
+# TODO gleiche methode wie training
+def get_validation_metrics(validationloader, model, criterion, ccl_version='linear'):
     model = model.eval()
-    metrics_results = torch.zeros(len(metrics)).cuda()
+    metrics_results = torch.zeros(4).cuda()
     for i, data in enumerate(tqdm(validationloader, leave=False, desc='Validation')):
         if i == 20000:
             break
-        inputs, labels = data
-        inputs, labels = inputs.cuda(), labels.cuda()
+
+        if len(data) == 3:
+            inputs, labels, segment_masks = data
+            inputs, labels, segment_masks = inputs.cuda(), labels.cuda(), segment_masks.cuda()
+        else:
+            inputs, labels = data
+            inputs, labels = inputs.cuda(), labels.cuda()
+            segment_masks = None
+
         with autocast():
             outputs = model(inputs)
-            for j, metric in enumerate(metrics):
-                metrics_results[j] += metric(outputs, labels)
+
+            metrics_results[0] += criterion(outputs, labels, segment_masks)[0]
+            metrics_results[1] += PSNR()(outputs, labels)
+            metrics_results[2] += SSIM()(outputs, labels)
+            if segment_masks is not None:
+                metrics_results[3] += ColorConsistencyLoss(ccl_version).cuda()(outputs, segment_masks)
+
             del outputs
 
     metrics_results = metrics_results.cpu()
     metrics_results /= i
 
-    return metrics_results.numpy().tolist()
+    loss_names = [criterion.__class__.__name__, 'PSNR', 'SSIM', f'ColorConsistencyLoss-{ccl_version}'] \
+        if metrics_results[3] != 0.0 else \
+        [criterion.__class__.__name__, 'PSNR', 'SSIM']
+    avg_loss_values = metrics_results.numpy().tolist()
+    return {name: avg_loss_values[i] for i, name in enumerate(loss_names)}
 
 
 def fill_growing_parameters(sparse, iterations):
@@ -95,6 +116,11 @@ def train(model: Model,
           iterations: int,
           val_iterations: int,
           verbose: bool,
+          train_segment_masks_path: str = '',
+          val_segment_masks_path: str = '',
+          lambda_ccl=0.0,
+          loss_type='L2',
+          ccl_version='linear',
           regularization_l2: float = 0.,
           warmup=5000,
           milestones=[],
@@ -116,15 +142,25 @@ def train(model: Model,
     trainset = ImagenetData(train_data_path, transform=None, transform_l=to_tensor_l, transform_ab=to_tensor_ab)
     testset = ImagenetData(val_data_path, transform=transforms.get_val_transform(1024), transform_l=to_tensor_l,
                            transform_ab=to_tensor_ab)
+    if train_segment_masks_path or val_segment_masks_path:
+        trainset = ImagenetColorSegmentData(train_data_path, train_segment_masks_path, transform=None,
+                                            transform_l=to_tensor_l, transform_ab=to_tensor_ab)
+        testset = ImagenetColorSegmentData(val_data_path, val_segment_masks_path,
+                                           transform=transforms.get_val_transform(1024), transform_l=to_tensor_l,
+                                           transform_ab=to_tensor_ab)
 
     model_dir = os.path.dirname(state['path'])
 
     writer = SummaryWriter(log_dir=os.path.join(model_dir, 'logs'))
 
-    if model.head_type == 'regression':
-        criterion = torch.nn.MSELoss()
-    elif model.head_type == 'regression-sum':
-        criterion = torch.nn.MSELoss(reduction='sum')
+    if loss_type == 'L2':
+        criterion = L2Loss()
+    elif loss_type == 'L1':
+        criterion = L1Loss()
+    elif loss_type == 'L2+CCL':
+        criterion = L2CCLoss(lambda_ccl=lambda_ccl, ccl_version=ccl_version)
+    elif loss_type == 'L1+CCL':
+        criterion = L1CCLoss(lambda_ccl=lambda_ccl, ccl_version=ccl_version)
     else:
         raise NotImplementedError()
 
@@ -163,6 +199,7 @@ def train(model: Model,
         print('loading sampler...')
         sampler.load_state_dict(state['sampler'])
 
+    print(f'        Loss: {loss_type}')
     print(f'   Iteration: {iteration}/{iterations}')
     print(f'      Warmup: {warmup}')
     print(f'  Milestones: {milestones}')
@@ -174,18 +211,21 @@ def train(model: Model,
     trainset.transform = transforms.get_transform(input_size[0])
     trainloader = get_trainloader(trainset, batch_size, sampler)
 
-    running_loss, running_psnr, avg_running_loss, img_per_sec = 0.0, 0.0, 0.0, 0.0
+    running_psnr, img_per_sec = 0.0, 0.0
+    running_loss, avg_running_loss = defaultdict(float), defaultdict(float)
     tic = time.time()
     changed_batch_size = True
     pbar = tqdm(total=iterations, initial=iteration)
     while iteration < iterations:
+        loss_str = ' - '.join([f'{key}: {val:.3f} ' for key, val in avg_running_loss.items()])
         pbar.set_description(
-            f'[Ep: {sampler.epoch} | B: {batch_size} | Im: {input_size[0]}x{input_size[1]}] loss: {avg_running_loss:.3f} - {img_per_sec:.2f} img/s')
+            f'[Ep: {sampler.epoch} | B: {batch_size} | Im: {input_size[0]}x{input_size[1]}]  loss: {loss_str} - {img_per_sec:.2f} img/s')
         for data in trainloader:
             if iteration in sparse_growing_parameters and not changed_batch_size:
                 # change batch size and input size
                 batch_size, input_size = sparse_growing_parameters[iteration]
                 trainset.transform = transforms.get_transform(input_size[0])
+                # recreate the loader, otherwise the transform is not propagated in multiprocessing to the workers
                 trainloader = get_trainloader(trainset, batch_size, sampler)
                 changed_batch_size = True
                 break
@@ -193,8 +233,12 @@ def train(model: Model,
                 changed_batch_size = False
 
             # get data
-            inputs, labels = data
-            inputs, labels = inputs.cuda(), labels.cuda()
+            if len(data) == 3:
+                inputs, labels, segment_masks = data
+                inputs, labels = inputs.cuda(), (labels.cuda(), segment_masks.cuda())
+            else:
+                inputs, labels = data
+                inputs, labels = inputs.cuda(), labels.cuda()
 
             # zero the parameter gradients
             optimizer.zero_grad()
@@ -202,8 +246,8 @@ def train(model: Model,
             # forward + backward + optimize
             with autocast():
                 outputs = model(inputs)
-                loss = criterion(outputs, labels)
-                _psnr = psnr_func(outputs, labels)
+                loss, loss_dict = criterion(outputs, *labels if isinstance(labels, tuple) else labels)
+                _psnr = psnr_func(outputs, labels[0] if isinstance(labels, tuple) else labels)
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()
@@ -211,7 +255,8 @@ def train(model: Model,
             scheduler.step()
 
             # print statistics
-            running_loss += loss.item()
+            for k, v, in loss_dict.items():
+                running_loss[k] += v.item()
             running_psnr += _psnr.item()
 
             iteration += 1
@@ -219,18 +264,22 @@ def train(model: Model,
             if iteration % print_every == 0 or iteration == iterations:
                 img_per_sec = print_every * batch_size / (time.time() - tic)
 
-                avg_running_loss = running_loss / print_every
+                for k, v in running_loss.items():
+                    avg_running_loss[k] = running_loss[k] / print_every
+                    writer.add_scalar(f'train/{k}', avg_running_loss[k], global_step=iteration)
                 avg_running_psnr = running_psnr / print_every
 
-                writer.add_scalar('train/MSE', avg_running_loss, global_step=iteration)
                 writer.add_scalar('train/PSNR', avg_running_psnr, global_step=iteration)
 
                 writer.add_scalar('Performance/Images per second', img_per_sec, global_step=iteration)
                 writer.add_scalar('Learning rate', optimizer.param_groups[0]['lr'], global_step=iteration)
+                if loss_type in ['L1+CCL', 'L2+CCL']:
+                    writer.add_scalar('Parameters/lambda CCL', lambda_ccl, global_step=iteration)
+                loss_str = ' - '.join([f'{key}: {val:.3f} ' for key, val in avg_running_loss.items()])
                 pbar.set_description(
-                    f'[Ep: {sampler.epoch} | B: {batch_size} | Im: {input_size[0]}x{input_size[1]}] loss: {avg_running_loss:.3f} - {img_per_sec:.2f} img/s')
+                    f'[Ep: {sampler.epoch} | B: {batch_size} | Im: {input_size[0]}x{input_size[1]}] loss: {loss_str} - {img_per_sec:.2f} img/s')
 
-                running_loss = 0.0
+                running_loss = defaultdict(float)
                 running_psnr = 0.0
                 state.update({
                     'iteration': iteration,
@@ -251,14 +300,13 @@ def train(model: Model,
                 test_loader = DataLoader(testset,
                                          batch_size=1,
                                          shuffle=False,
-                                         num_workers=4,
+                                         num_workers=8,
                                          pin_memory=True,
                                          prefetch_factor=1)
-                metrics = [criterion, PSNR(), SSIM()]
                 with torch.no_grad():
-                    metric_results = get_validation_metrics(test_loader, model, metrics)
-                for metric_result, metric in zip(metric_results, metrics):
-                    writer.add_scalar(f'validation/{metric.__class__.__name__}', metric_result, global_step=iteration)
+                    metric_results = get_validation_metrics(test_loader, model, criterion, ccl_version=ccl_version)
+                for k, v in metric_results.items():
+                    writer.add_scalar(f'validation/{k}', v, global_step=iteration)
 
                 predicted_images = infer(model=model,
                                          image_path=val_data_path,
@@ -271,6 +319,7 @@ def train(model: Model,
                 for i, img in enumerate(predicted_images):
                     writer.add_image(f'example-{i}', img, global_step=iteration, dataformats='HWC')
                 model = model.train()
+                tic = time.time()
             pbar.update(1)
             if iteration == iterations:
                 break

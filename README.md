@@ -24,11 +24,23 @@ I work with a self compiled Pytorch to get the latest Cudnn support,
 but it should not make a difference if you use the same Pytorch version from the official release channels. 
 The currently included CuDNN 8.0.0 has poor support for Ampere GPUs.
 
+Install **CUDA_SLIC**:
+
+```
+PATH=/usr/local/cuda-11/bin:$PATH CUDA_INC_DIR=/usr/local/cuda-11/include pip install cuda-slic
+```
+
+
 **Doc dependencies:**
 
 ```bash
 pip install sphinx_rtd_theme
 ```
+
+## Data preparation
+
+I use the ImageNet dataset.
+
 
 ## Training
 
@@ -113,6 +125,22 @@ optional arguments:
   --img_limit value   Only first N images in the folder
   --debug             Stich original image, grey and predicted together
 ```
+## Generate Color Segmentation Masks
+
+### Linear colour segmentation revisited
+
+From the paper [Linear colour segmentation revisited, Smagina et al., 2019, SPIE](https://spie.org/Publications/Proceedings/Paper/10.1117/12.2523007?SSO=1). 
+
+The segmentation masks I use are rather large, about 20 areas per image.
+
+I [forked](https://github.com/dketterer/colorsegmentation) their repo and fixed some issues to make it compatible with OpenCV 4.2.
+
+See [utils/create_color_segments_multi.py](utils/create_color_segements_multi.py) for the usage.
+
+```
+python3 utils/create_color_segements_multi.py
+```
+
 
 ## Unittest
 

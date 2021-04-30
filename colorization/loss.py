@@ -1,5 +1,4 @@
-import warnings
-from typing import List, Union, Optional
+from typing import Optional
 
 import torch
 import torch.nn.functional as F

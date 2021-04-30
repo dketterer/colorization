@@ -18,7 +18,7 @@ class Model(nn.Module):
         self.head_type = head_type
 
         def make_head():
-            if self.head_type == 'regression' or self.head_type == 'regression-sum':
+            if self.head_type.startswith('regression'):
                 return OutConv(self.backbone.base_channel_size, 2)
 
         self.head = make_head()

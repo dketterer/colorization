@@ -4,10 +4,11 @@ import unittest
 import cv2
 import numpy as np
 import torch
+import albumentations as A
 
 from colorization import data
 from colorization.train import to_tensor_l, to_tensor_ab
-from colorization.data import SavableShuffleSampler
+from colorization.data import SavableShuffleSampler, get_trainloader
 
 
 class TestImagenetData(unittest.TestCase):
@@ -20,14 +21,14 @@ class TestImagenetData(unittest.TestCase):
         self.assertEqual(np.uint8, ab.dtype)
         self.assertEqual(np.ndarray, type(l))
         self.assertEqual(np.ndarray, type(ab))
-        self.assertEqual(6, len(dataset))
+        self.assertEqual(7, len(dataset))
 
     def test_conversion(self):
         transform = None
         dataset = data.ImagenetData('test/resources/images', transform)
         dataset.training = True
         # targets images/a/black-pixel.png
-        l, ab = dataset[3]
+        l, ab = dataset[4]
         self.assertEqual(0, l[:, :, -1])
         self.assertEqual(128, ab[:, :, -2])
         self.assertEqual(128, ab[:, :, -1])
@@ -50,7 +51,7 @@ class TestImagenetData(unittest.TestCase):
                                     transform_l=to_tensor_l,
                                     transform_ab=to_tensor_ab)
         # targets white-pixel.png
-        l, ab = dataset[5]
+        l, ab = dataset[6]
         self.assertEqual(1., l.numpy())
         try:
             np.testing.assert_allclose(ab.numpy().squeeze(), np.array([0., 0.]), atol=0.05, rtol=0.001)
@@ -97,6 +98,42 @@ class TestImagenetData(unittest.TestCase):
         result = [idx for idx in no_shuffle_sampler]
 
         self.assertEqual(data, result)
+
+    def test_trainloader(self):
+        transform = A.Compose(
+            [A.Resize(256, 256, always_apply=True)])
+        dataset = data.ImagenetData('test/resources/images', transform)
+        trainloader = get_trainloader(dataset, 7, SavableShuffleSampler(dataset, shuffle=False))
+        it = iter(trainloader)
+        d = it.__next__()
+        inputs, ab = d
+        self.assertEqual(7, len(inputs))
+        self.assertEqual(7, len(ab))
+
+    def test_imagenet_with_color_segments(self):
+        transform = A.Compose(
+            [A.Resize(256, 256, always_apply=True)])
+        dataset = data.ImagenetColorSegmentData('test/resources/images', 'test/resources/color_segment', transform)
+        l, ab, segment_masks = dataset[0]
+        # basics
+        self.assertEqual([], segment_masks)
+        l, ab, segment_masks = dataset[1]
+        self.assertTrue(isinstance(segment_masks[0], np.ndarray))
+        self.assertEqual(50, len(segment_masks))
+
+    def test_trainloader_with_color_segments(self):
+        transform = A.Compose(
+            [A.Resize(256, 256, always_apply=True)])
+        dataset = data.ImagenetColorSegmentData('test/resources/images', 'test/resources/color_segment', transform)
+        trainloader = get_trainloader(dataset, 7, SavableShuffleSampler(dataset, shuffle=False))
+        it = iter(trainloader)
+        d = it.__next__()
+        inputs, labels = d
+        ab, segment_masks = labels
+        self.assertEqual(7, len(inputs))
+        self.assertEqual(7, len(segment_masks))
+        self.assertEqual(7, len(ab))
+        self.assertEqual(50, len(segment_masks[1]))
 
 
 if __name__ == '__main__':

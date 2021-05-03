@@ -2,7 +2,7 @@ import re
 from typing import List
 
 import torch
-from torch import Tensor
+from torch import Tensor, nn
 from torch.hub import load_state_dict_from_url
 from torch.utils import model_zoo
 import torch.nn.functional as F
@@ -22,6 +22,17 @@ class DenseNet(models.DenseNet):
     def initialize(self):
         if self.url:
             _load_state_dict(self, self.url, True)
+        else:
+            def init_layer(m):
+                if isinstance(m, nn.Conv2d):
+                    nn.init.kaiming_normal_(m.weight)
+                elif isinstance(m, nn.BatchNorm2d):
+                    nn.init.constant_(m.weight, 1)
+                    nn.init.constant_(m.bias, 0)
+                elif isinstance(m, nn.Linear):
+                    nn.init.constant_(m.bias, 0)
+
+            self.apply(init_layer)
 
     def forward(self, x: Tensor) -> List[Tensor]:
         x = self.features.conv0(x)

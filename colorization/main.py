@@ -24,7 +24,7 @@ def parse_args(args):
     parser_train.add_argument('transform', metavar='path', type=str, help='path transform.py')
     parser_train.add_argument('--images', metavar='path', type=str, help='path to images', default='.')
     parser_train.add_argument('--val_images', metavar='path', type=str, help='path to images')
-    parser_train.add_argument('--segment_masks', metavar='path', type=str, help='path to images', default='.')
+    parser_train.add_argument('--segment_masks', metavar='path', type=str, help='path to images')
     parser_train.add_argument('--val_segment_masks', metavar='path', type=str, help='path to images')
     parser_train.add_argument('--backbone', action='store', type=str, help='backbone model', default='UNet_bc64_d4')
     parser_train.add_argument('--head_type', type=str, help='head type', default='regression')

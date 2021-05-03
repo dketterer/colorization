@@ -246,8 +246,9 @@ def train(model: Model,
             # forward + backward + optimize
             with autocast():
                 outputs = model(inputs)
-                loss, loss_dict = criterion(outputs, *labels if isinstance(labels, tuple) else labels)
-                _psnr = psnr_func(outputs, labels[0] if isinstance(labels, tuple) else labels)
+                crit_labels = [*labels] if train_segment_masks_path else [labels]
+                loss, loss_dict = criterion(outputs, *crit_labels)
+                _psnr = psnr_func(outputs, labels[0] if train_segment_masks_path else labels)
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()

@@ -75,6 +75,10 @@ def get_validation_metrics(validationloader, model, criterion, ccl_version='line
                 metrics_results[3] += ColorConsistencyLoss(ccl_version).cuda()(outputs, segment_masks)
 
             del outputs
+            del labels
+            del inputs
+            if segment_masks is not None:
+                del segment_masks
 
     metrics_results = metrics_results.cpu()
     metrics_results /= i
@@ -127,6 +131,7 @@ def train(model: Model,
           optimizer_name: str = 'adam',
           print_every: int = 250,
           debug=False):
+    torch.backends.cudnn.benchmark = True
     model.train()
 
     if debug:
@@ -249,6 +254,15 @@ def train(model: Model,
                 crit_labels = [*labels] if train_segment_masks_path else [labels]
                 loss, loss_dict = criterion(outputs, *crit_labels)
                 _psnr = psnr_func(outputs, labels[0] if train_segment_masks_path else labels)
+                del outputs
+                del inputs
+                if len(data) == 3:
+                    del labels[0]
+                    del labels[1]
+                else:
+                    del labels
+                del data
+
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()

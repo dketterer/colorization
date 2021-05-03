@@ -4,7 +4,7 @@ from torchvision.models import densenet
 import torch.nn.functional as F
 
 from colorization.backbones.densenet import DenseNet
-from colorization.backbones.utils import register
+from colorization.backbones.utils import register, PadToX
 from colorization.backbones.residual_dense_block import RDB
 from colorization.backbones.unetparts import UpPad
 from colorization.backbones.residual_dense_block import RDBUp
@@ -46,22 +46,11 @@ class DenseNetUNetRDB(nn.Module):
         self.up4 = RDBUp(channels[1], channels[0], channels[0])  # 256 + 64, 64
         self.last_up = UpPad()
         self.conv_3x3 = nn.Conv2d(channels[0], channels[0], kernel_size=3, padding=1)
+        self.pad_to = PadToX(32)
 
     def forward(self, x):
         # pad to multiples of 32
-        pad_to = 32
-        w, h = x.size()[2:]
-        w_padded = w + pad_to - w % pad_to if w % pad_to != 0 else w
-        h_padded = h + pad_to - h % pad_to if h % pad_to != 0 else h
-        diffY = w_padded - w
-        diffX = h_padded - h
-        if diffX > 0 or diffY > 0:
-            # Hack for https://github.com/pytorch/pytorch/issues/13058
-            with autocast(enabled=False):
-                x = x.float()
-
-                x = F.pad(x, [diffX // 2, diffX - diffX // 2,
-                              diffY // 2, diffY - diffY // 2])
+        diffX, diffY, x, = self.pad_to(x)
 
         orig = x
         # need 3 channels for the pretrained resnet
@@ -82,9 +71,7 @@ class DenseNetUNetRDB(nn.Module):
         x = self.last_up(x, orig)
         x = self.conv_3x3(x)
 
-        if diffX > 0 or diffY > 0:
-            # remove the pad
-            x = x[:, :, diffY // 2:x.size()[2] - (diffY - diffY // 2), diffX // 2:x.size()[3] - (diffX - diffX // 2)]
+        x = self.pad_to.remove_pad(x, diffX, diffY)
 
         return x
 

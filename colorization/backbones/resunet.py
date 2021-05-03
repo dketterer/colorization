@@ -3,7 +3,7 @@ from torchvision.models.resnet import Bottleneck
 
 from colorization.backbones.unetparts import Up as Upv1
 from colorization.backbones.unetparts import Down, Upv2
-from colorization.backbones.utils import register
+from colorization.backbones.utils import register, PadToX
 from colorization.backbones.resnet import ResNet
 from torchvision.models import resnet as vrn
 
@@ -59,10 +59,12 @@ class ResUNet(nn.Module):
             nn.Conv2d(channels[1] // factor, channels[0], kernel_size=1),
             nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
         )
+        self.pad_to = PadToX(32)
 
     def forward(self, x):
         # need 3 channels for the pretrained resnet
         # top = self.top(x)
+        diffX, diffY, x, = self.pad_to(x)
         x = x.repeat(1, 3, 1, 1)
         c1, c2, c3, c4, c5 = self.features(x)
 
@@ -80,6 +82,7 @@ class ResUNet(nn.Module):
         # x = self.up5(x, top)
         x = self.last_up(x)
 
+        x = self.pad_to.remove_pad(x, diffX, diffY)
         return x
 
     def initialize(self):

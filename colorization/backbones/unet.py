@@ -1,6 +1,6 @@
 from torch import nn
 
-from colorization.backbones.utils import register
+from colorization.backbones.utils import register, PadToX
 from colorization.backbones.unetparts import DoubleConv, Down, Up
 
 
@@ -28,8 +28,10 @@ class UNet(nn.Module):
             self.ups.append(Up(down_channel * 2, down_channel // factor, bilinear))
             down_channel = down_channel // 2
         self.ups.append(Up(down_channel * 2, base_channel_size, bilinear))
+        self.pad_to = PadToX(32)
 
     def forward(self, x):
+        diffX, diffY, x, = self.pad_to(x)
         x = self.inc(x)
         intermediates = []
         for layer in self.downs:
@@ -37,6 +39,7 @@ class UNet(nn.Module):
             x = layer(x)
         for layer, intermediate in zip(self.ups, intermediates[::-1]):
             x = layer(x, intermediate)
+        x = self.pad_to.remove_pad(x, diffX, diffY)
         return x
 
     def initialize(self):

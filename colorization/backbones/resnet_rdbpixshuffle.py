@@ -3,7 +3,7 @@ from torch import nn
 import torch.nn.functional as F
 
 from colorization.backbones.residual_dense_block import RDB
-from colorization.backbones.utils import register
+from colorization.backbones.utils import register, PadToX
 from colorization.backbones.resnet import ResNet
 from torchvision.models import resnet as vrn
 
@@ -69,9 +69,11 @@ class ResnetPixShuffle(nn.Module):
             nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
             nn.Conv2d(nChannels, channels[0], kernel_size=3, padding=1)
         )
+        self.pad_to = PadToX(32)
 
     def forward(self, x):
         # need 3 channels for the pretrained resnet
+        diffX, diffY, x, = self.pad_to(x)
         x = x.repeat(1, 3, 1, 1)
         c1, c2, c3, c4, c5 = self.features(x)
 
@@ -87,6 +89,7 @@ class ResnetPixShuffle(nn.Module):
         x = self.up4(x, c1)
         x = self.last_up(x)
 
+        x = self.pad_to.remove_pad(x, diffX, diffY)
         return x
 
     def initialize(self):

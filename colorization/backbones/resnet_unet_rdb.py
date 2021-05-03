@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 from colorization.backbones.unetparts import UpPad
 from colorization.backbones.residual_dense_block import RDB, RDBUp
-from colorization.backbones.utils import register
+from colorization.backbones.utils import register, PadToX
 from colorization.backbones.resnet import ResNet
 from torchvision.models import resnet as vrn
 
@@ -14,6 +14,7 @@ class ResnetUNetRDB(nn.Module):
         super(ResnetUNetRDB, self).__init__()
         self.features = features
         self.name = 'ResnetUNetRDB'
+        self.pad_to = PadToX(32)
 
         is_light = self.features.bottleneck == vrn.BasicBlock
         channels = [64, 64, 128, 256, 512] if is_light else [64, 256, 512, 1024, 2048]
@@ -39,20 +40,7 @@ class ResnetUNetRDB(nn.Module):
 
     def forward(self, x):
         # pad to multiples of 32
-        pad_to = 32
-        w, h = x.size()[2:]
-        w_padded = w + pad_to - w % pad_to if w % pad_to != 0 else w
-        h_padded = h + pad_to - h % pad_to if h % pad_to != 0 else h
-        diffY = w_padded - w
-        diffX = h_padded - h
-        if diffX > 0 or diffY > 0:
-            # Hack for https://github.com/pytorch/pytorch/issues/13058
-            with autocast(enabled=False):
-                x = x.float()
-
-                x = F.pad(x, [diffX // 2, diffX - diffX // 2,
-                              diffY // 2, diffY - diffY // 2])
-
+        diffX, diffY, x, = self.pad_to(x)
         # need 3 channels for the pretrained resnet
         orig = x
         x = x.repeat(1, 3, 1, 1)
@@ -72,9 +60,7 @@ class ResnetUNetRDB(nn.Module):
         x = self.last_up(x, orig)
         x = self.conv_3x3(x)
 
-        if diffX > 0 or diffY > 0:
-            # remove the pad
-            x = x[:, :, diffY // 2:x.size()[2] - (diffY - diffY // 2), diffX // 2:x.size()[3] - (diffX - diffX // 2)]
+        x = self.pad_to.remove_pad(x, diffX, diffY)
 
         return x
 

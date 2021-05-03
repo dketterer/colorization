@@ -3,6 +3,7 @@ import unittest
 import numpy as np
 import torch
 
+from backbones import UNetVGG16DualEncoder
 from colorization.backbones import Resnet50_UNetV2, Resnet50UNetRDB, Resnext50_UNet, Resnet50_UNet, Resnet101_UNetV2, \
     Resnet152_UNetV2, DenseNet121UNetRDB
 
@@ -101,6 +102,20 @@ class TestReceptiveField():
             y_hat_2 = torch.narrow(resunet(inp), 1, 0, 1).numpy()
         self.analyze(y_hat_1, y_hat_2, inp, 'DenseNet121UNetRDB')
 
+    def test_UNetVGG16DualEncoder(self):
+        torch.manual_seed(0)
+        resunet = UNetVGG16DualEncoder()
+        resunet = resunet.eval()
+        with torch.no_grad():
+            inp = torch.randn([1, 1, 1024, 1024])
+            inp[0, 0, 0, 0] = 0
+
+            y_hat_1 = torch.narrow(resunet(inp), 1, 0, 1).numpy()
+            inp[0, 0, 0, 0] = 1
+
+            y_hat_2 = torch.narrow(resunet(inp), 1, 0, 1).numpy()
+        self.analyze(y_hat_1, y_hat_2, inp, 'UNetVGG16DualEncoder')
+
 
 if __name__ == '__main__':
     test = TestReceptiveField()
@@ -110,3 +125,4 @@ if __name__ == '__main__':
     test.test_res_unet_rdb()
     test.test_DenseNet121UNetRDB()
     test.test_resnet101_unet()
+    test.test_UNetVGG16DualEncoder()

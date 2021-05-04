@@ -52,9 +52,12 @@ def imshow(img):
 # TODO gleiche methode wie training
 def get_validation_metrics(validationloader, model, criterion, ccl_version='linear'):
     model = model.eval()
-    metrics_results = torch.zeros(4).cuda()
+    metrics_results = torch.zeros(5).cuda()
+
+    ssim = SSIM(window_size=11, gaussian_weights=True).cuda()
+    ssim_uniform = SSIM(window_size=7, gaussian_weights=False).cuda()
     for i, data in enumerate(tqdm(validationloader, leave=False, desc='Validation')):
-        if i == 20000:
+        if i == 5000:
             break
 
         if len(data) == 3:
@@ -70,22 +73,23 @@ def get_validation_metrics(validationloader, model, criterion, ccl_version='line
 
             metrics_results[0] += criterion(outputs, labels, segment_masks)[0]
             metrics_results[1] += PSNR()(outputs, labels)
-            metrics_results[2] += SSIM()(outputs, labels)
+            metrics_results[2] += ssim(outputs, labels)
+            metrics_results[3] += ssim_uniform(outputs, labels)
             if segment_masks is not None:
-                metrics_results[3] += ColorConsistencyLoss(ccl_version).cuda()(outputs, segment_masks)
+                metrics_results[4] += ColorConsistencyLoss(ccl_version).cuda()(outputs, segment_masks)
 
-            del outputs
-            del labels
-            del inputs
-            if segment_masks is not None:
-                del segment_masks
+        del outputs
+        del labels
+        del inputs
+        if segment_masks is not None:
+            del segment_masks
 
     metrics_results = metrics_results.cpu()
-    metrics_results /= i
+    metrics_results /= 5000
 
-    loss_names = [criterion.__class__.__name__, 'PSNR', 'SSIM', f'ColorConsistencyLoss-{ccl_version}'] \
-        if metrics_results[3] != 0.0 else \
-        [criterion.__class__.__name__, 'PSNR', 'SSIM']
+    loss_names = [criterion.__class__.__name__, 'PSNR', 'SSIM', 'SSIM-uniform', f'ColorConsistencyLoss-{ccl_version}'] \
+        if metrics_results[4] != 0.0 else \
+        [criterion.__class__.__name__, 'PSNR', 'SSIM', 'SSIM-uniform']
     avg_loss_values = metrics_results.numpy().tolist()
     return {name: avg_loss_values[i] for i, name in enumerate(loss_names)}
 
@@ -131,7 +135,6 @@ def train(model: Model,
           optimizer_name: str = 'adam',
           print_every: int = 250,
           debug=False):
-    torch.backends.cudnn.benchmark = True
     model.train()
 
     if debug:
@@ -254,20 +257,21 @@ def train(model: Model,
                 crit_labels = [*labels] if train_segment_masks_path else [labels]
                 loss, loss_dict = criterion(outputs, *crit_labels)
                 _psnr = psnr_func(outputs, labels[0] if train_segment_masks_path else labels)
-                del outputs
-                del inputs
-                if len(data) == 3:
-                    del labels[0]
-                    del labels[1]
-                else:
-                    del labels
-                del data
 
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()
 
             scheduler.step()
+
+            del outputs
+            del inputs
+            if len(data) == 3:
+                del labels[0]
+                del labels[1]
+            else:
+                del labels
+            del data
 
             # print statistics
             for k, v, in loss_dict.items():

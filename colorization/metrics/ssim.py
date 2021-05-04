@@ -13,10 +13,20 @@ def gaussian(window_size, sigma):
     return gauss / gauss.sum()
 
 
-def create_window(window_size, channel):
-    _1D_window = gaussian(window_size, 1.5).unsqueeze(1)
-    _2D_window = _1D_window.mm(_1D_window.t()).float().unsqueeze(0).unsqueeze(0)
-    window = Variable(_2D_window.expand(channel, 1, window_size, window_size).contiguous())
+def uniform_window(window_size):
+    window = torch.zeros(window_size, window_size)
+    torch.nn.init.constant_(window, 1 / window_size ** 2)
+    return window
+
+
+def create_window(window_size, channel, gaussian_weights=True):
+    if gaussian_weights:
+        _1D_window = gaussian(window_size, 1.5).unsqueeze(1)
+        _2D_window = _1D_window.mm(_1D_window.t()).float().unsqueeze(0).unsqueeze(0)
+        window = Variable(_2D_window.expand(channel, 1, window_size, window_size).contiguous())
+    else:
+        window = Variable(uniform_window(window_size).unsqueeze(0).unsqueeze(0).expand(channel, 1, window_size,
+                                                                                       window_size).contiguous())
     return window
 
 
@@ -45,12 +55,13 @@ def _ssim(img1, img2, window, window_size, channel, size_average=True):
 
 
 class SSIM(torch.nn.Module):
-    def __init__(self, window_size=11, size_average=True):
+    def __init__(self, window_size=11, size_average=True, gaussian_weights=False):
         super(SSIM, self).__init__()
         self.window_size = window_size
         self.size_average = size_average
         self.channel = 2
         self.window = create_window(window_size, self.channel)
+        self.gaussian_weights = gaussian_weights
 
     @custom_fwd(cast_inputs=torch.float32)
     def forward(self, img1, img2):
@@ -73,7 +84,7 @@ class SSIM(torch.nn.Module):
         if channel == self.channel and self.window.data.type() == img1.data.type():
             window = self.window
         else:
-            window = create_window(self.window_size, channel)
+            window = create_window(self.window_size, channel, gaussian_weights=self.gaussian_weights)
 
             if img1.is_cuda:
                 window = window.cuda(img1.get_device())

@@ -319,7 +319,7 @@ def train(model: Model,
                 writer.add_scalar('Learning rate', optimizer.param_groups[0]['lr'], global_step=iteration)
                 if loss_type in ['L1+CCL', 'L2+CCL']:
                     writer.add_scalar('Parameters/lambda CCL', lambda_ccl, global_step=iteration)
-                loss_str = ' - '.join([f'{key}: {val:.3f} ' for key, val in avg_running_loss.items()])
+                loss_str = ' - '.join([f'{key}: {val:.5} ' for key, val in avg_running_loss.items()])
                 pbar.set_description(
                     f'[Ep: {sampler.epoch} | B: {batch_size} | Im: {input_size[0]}x{input_size[1]}] loss: {loss_str} - {img_per_sec:.2f} img/s')
 

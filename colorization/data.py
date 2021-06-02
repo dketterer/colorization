@@ -1,8 +1,10 @@
 import os
+import re
 import time
 from typing import Callable, Optional, Sized, List
 
 import cv2
+import magic
 import numpy as np
 import torch
 
@@ -11,6 +13,15 @@ import matplotlib.pyplot as plt
 from torch.utils.data.dataloader import default_collate
 
 from colorization.preprocessing import split_channels
+
+
+def is_rgb(path):
+    t = magic.from_file(path)
+    if t.startswith('JPEG') and re.match(r'.*components 3.*', t):
+        return True
+    elif t.startswith('PNG') and re.match(r'.*8-bit/color RGB.*', t):
+        return True
+    return False
 
 
 class ImagenetData(Dataset):
@@ -37,8 +48,7 @@ class ImagenetData(Dataset):
         :type debug: bool
         """
         self.debug = debug
-        self.folder = folder
-        self.paths = []
+        self.imagenet_folder = folder
         self.transform = transform
         self.to_tensor_l = transform_l
         self.to_tensor_ab = transform_ab
@@ -46,22 +56,43 @@ class ImagenetData(Dataset):
 
         image_extensions = ['.jpg', '.jpeg', '.JPG', '.JPEG', '.png', '.PNG']
 
-        for file in os.listdir(self.folder):
-            if os.path.isdir(os.path.join(self.folder, file)):
-                for file2 in os.listdir(os.path.join(self.folder, file)):
-                    if os.path.splitext(file2)[1] in image_extensions:
-                        self.paths.append(os.path.join(self.folder, file, file2))
-            if os.path.splitext(file)[1] in image_extensions:
-                self.paths.append(os.path.join(self.folder, file))
+        imagenet_paths = []
+        tic = time.time()
 
+        for file in os.listdir(self.imagenet_folder):
+            if os.path.isdir(os.path.join(self.imagenet_folder, file)):
+                for file2 in os.listdir(os.path.join(self.imagenet_folder, file)):
+                    if os.path.splitext(file2)[1] in image_extensions:
+                        if is_rgb(os.path.join(self.imagenet_folder, file, file2)):
+                            imagenet_paths.append(os.path.join(self.imagenet_folder, file, file2))
+            if os.path.splitext(file)[1] in image_extensions:
+                if is_rgb(os.path.join(self.imagenet_folder, file)):
+                    imagenet_paths.append(os.path.join(self.imagenet_folder, file))
+
+        self.paths = imagenet_paths
         self.paths.sort()
+
+        self.buffer_in_mem = False
+        self.mem_dict = {}
+        if len(self.paths) < 100:
+
+            self.buffer_in_mem = True
+            for img_path in self.paths:
+                self.mem_dict[img_path] = np.fromfile(img_path, dtype=np.uint8)
+
+        print(f'Loaded dataset in {time.time() - tic:.2f}s {"into memory" if self.buffer_in_mem else ""}')
 
     def __len__(self):
         return len(self.paths)
 
     def __getitem__(self, item):
         img_path = self.paths[item]
-        img_orig = cv2.imread(img_path, cv2.IMREAD_COLOR)
+        if not self.buffer_in_mem:
+            img_orig = cv2.imread(img_path, cv2.IMREAD_COLOR)
+
+        else:
+            img_orig = cv2.imdecode(self.mem_dict[img_path], cv2.IMREAD_COLOR)
+
         img = cv2.cvtColor(img_orig, cv2.COLOR_BGR2RGB)
 
         if self.transform:
@@ -150,11 +181,13 @@ class ImagenetColorSegmentData(Dataset):
             if os.path.isdir(os.path.join(self.imagenet_folder, file)):
                 for file2 in os.listdir(os.path.join(self.imagenet_folder, file)):
                     if os.path.splitext(file2)[1] in image_extensions:
-                        imagenet_paths.append(os.path.join(self.imagenet_folder, file, file2))
-                        file_names.append(file2)
+                        if is_rgb(os.path.join(self.imagenet_folder, file, file2)):
+                            imagenet_paths.append(os.path.join(self.imagenet_folder, file, file2))
+                            file_names.append(file2)
             if os.path.splitext(file)[1] in image_extensions:
-                imagenet_paths.append(os.path.join(self.imagenet_folder, file))
-                file_names.append(file)
+                if is_rgb(os.path.join(self.imagenet_folder, file)):
+                    imagenet_paths.append(os.path.join(self.imagenet_folder, file))
+                    file_names.append(file)
 
         segment_paths = [os.path.join(self.colorsegment_folder, os.path.splitext(file)[0] + '.png') for file in
                          file_names]
@@ -163,7 +196,7 @@ class ImagenetColorSegmentData(Dataset):
 
         self.buffer_in_mem = False
         self.mem_dict = {}
-        if len(self.paths) < 100005:
+        if len(self.paths) < 100:
 
             self.buffer_in_mem = True
             for img_path, segment_path in self.paths:

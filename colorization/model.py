@@ -3,9 +3,11 @@ import os
 import torch
 import torch.nn as nn
 
+from colorization.backbones.utils import PadToX
 from colorization.chkpt_utils import build_model_file_name
-from colorization.backbones.heads import OutConv
+from colorization.backbones.heads import OutConv, TanHActivation
 import colorization.backbones as backbones_mod
+from colorization.backbones.smp_models import SMPModel
 
 
 class Model(nn.Module):
@@ -17,15 +19,32 @@ class Model(nn.Module):
         self.backbone = getattr(backbones_mod, self.backbone_name)()
         self.head_type = head_type
 
-        def make_head():
+        def make_head(only_activation):
             if self.head_type.startswith('regression'):
+                if only_activation:
+                    return TanHActivation()
                 return OutConv(self.backbone.base_channel_size, 2)
 
-        self.head = make_head()
+        self.head = make_head(only_activation=isinstance(self.backbone, SMPModel))
+        self.up = None
+        self.pad_to = PadToX(32)
 
     def forward(self, x):
+        # pad to multiples of 32
+        diffX, diffY, x, = self.pad_to(x)
+        h, w = x.size()[2:]
+
         x = self.backbone(x)
         x = self.head(x)
+
+        h_post, w_post = x.size()[2:]
+        if h_post < h or w_post < w:
+            if not self.up:
+                scale_factor = h // h_post
+                self.up = nn.Upsample(scale_factor=scale_factor, mode='bicubic', align_corners=True)
+            x = self.up(x)
+
+        x = self.pad_to.remove_pad(x, diffX, diffY)
         return x
 
     def initialize(self):

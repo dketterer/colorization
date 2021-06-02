@@ -88,7 +88,7 @@ def get_validation_metrics(validationloader, model, criterion, ccl_version='line
             del segment_masks
 
     metrics_results = metrics_results.cpu()
-    metrics_results /= 5000
+    metrics_results /= i
 
     loss_names = [criterion.__class__.__name__, 'PSNR', 'SSIM', 'SSIM-uniform', f'ColorConsistencyLoss-{ccl_version}'] \
         if metrics_results[4] != 0.0 else \

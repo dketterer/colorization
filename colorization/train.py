@@ -64,10 +64,11 @@ def get_validation_metrics(validationloader, model, criterion, ccl_version='line
 
         if len(data) == 3:
             inputs, labels, segment_masks = data
-            inputs, labels, segment_masks = inputs.cuda(), labels.cuda(), segment_masks.cuda()
+            inputs, labels, segment_masks = inputs.cuda(non_blocking=True), labels.cuda(
+                non_blocking=True), segment_masks.cuda(non_blocking=True)
         else:
             inputs, labels = data
-            inputs, labels = inputs.cuda(), labels.cuda()
+            inputs, labels = inputs.cuda(non_blocking=True), labels.cuda(non_blocking=True)
             segment_masks = None
 
         with autocast():
@@ -141,6 +142,7 @@ def train(model: Model,
           print_every: int = 250,
           debug=False):
     model.train()
+    torch.backends.cudnn.benchmark = True
 
     if debug:
         print_every = 10
@@ -258,10 +260,11 @@ def train(model: Model,
             # get data
             if len(data) == 3:
                 inputs, labels, segment_masks = data
-                inputs, labels = inputs.cuda(), (labels.cuda(), segment_masks.cuda())
+                inputs, labels = inputs.cuda(non_blocking=True), (
+                    labels.cuda(non_blocking=True), segment_masks.cuda(non_blocking=True))
             else:
                 inputs, labels = data
-                inputs, labels = inputs.cuda(), labels.cuda()
+                inputs, labels = inputs.cuda(non_blocking=True), labels.cuda(non_blocking=True)
 
             # zero the parameter gradients
             optimizer.zero_grad()
@@ -281,11 +284,7 @@ def train(model: Model,
 
             del outputs
             del inputs
-            if len(data) == 3:
-                del labels[0]
-                del labels[1]
-            else:
-                del labels
+            del labels
             del data
 
             # print statistics
@@ -330,6 +329,7 @@ def train(model: Model,
             if iteration == iterations or iteration % val_iterations == 0:
                 # run validation
                 tic = time.time()
+                torch.backends.cudnn.benchmark = False
                 model = model.eval()
                 test_loader = DataLoader(testset,
                                          batch_size=1,
@@ -353,6 +353,7 @@ def train(model: Model,
                 for i, img in enumerate(predicted_images):
                     writer.add_image(f'example-{i}', img, global_step=iteration, dataformats='HWC')
                 model = model.train()
+                torch.backends.cudnn.benchmark = True
                 tic = time.time()
             pbar.update(1)
             if iteration == iterations:

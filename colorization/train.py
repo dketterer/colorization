@@ -247,6 +247,11 @@ def train(model: Model,
     changed_batch_size = True
     psnr = PSNR()
     pbar = tqdm(total=iterations, initial=iteration)
+
+    if iteration == 0:
+        for name, param in model.named_parameters():
+            writer.add_histogram(name, param, global_step=iteration)
+
     while iteration < iterations:
         loss_str = ' - '.join([f'{key}: {val:.5f} ' for key, val in avg_running_loss.items()])
         pbar.set_description(
@@ -348,6 +353,7 @@ def train(model: Model,
                 for k, v in metric_results.items():
                     writer.add_scalar(f'validation/{k}', v, global_step=iteration)
 
+                # images from validation
                 predicted_images = infer(model=model,
                                          image_path=val_data_path,
                                          target_path=os.path.join(model_dir, f'predictions-{iteration}'),
@@ -358,6 +364,21 @@ def train(model: Model,
                                          tensorboard=True)
                 for i, img in enumerate(predicted_images):
                     writer.add_image(f'example-{i}', img, global_step=iteration, dataformats='HWC')
+
+                # images from training
+                predicted_images = infer(model=model,
+                                         image_path=train_data_path,
+                                         target_path=os.path.join(model_dir, f'predictions-training-{iteration}'),
+                                         batch_size=1,
+                                         img_limit=20,
+                                         transform=transforms.get_val_transform(1024),
+                                         debug=True,
+                                         tensorboard=True)
+                for i, img in enumerate(predicted_images):
+                    writer.add_image(f'example-train-{i}', img, global_step=iteration, dataformats='HWC')
+
+                for name, param in model.named_parameters():
+                    writer.add_histogram(name, param, global_step=iteration)
                 model = model.train()
                 torch.backends.cudnn.benchmark = True
                 tic = time.time()

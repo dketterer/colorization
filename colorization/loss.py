@@ -25,7 +25,7 @@ class ColorConsistencyLoss(nn.Module):
     def forward(self, x: Tensor, masks: BoolTensor) -> Tensor:
         # x: (B, C, H, W)
         # masks: (B, S, H, W)
-        # there must be exactly B*C*H*W 'True' values in the masks
+        masks = F.one_hot(masks).bool().permute((0, 3, 1, 2)).contiguous()
 
         # expand x and the masks to make the loss calculation vectorized per image
         x_exp = torch.unsqueeze(x, 2).expand(x.size()[0:2] + (len(masks[0]),) + x.size()[2:])

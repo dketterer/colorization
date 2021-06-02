@@ -214,20 +214,17 @@ class ImagenetColorSegmentData(Dataset):
     def __getitem__(self, item):
         img_path, segment_path = self.paths[item]
         if not self.buffer_in_mem:
-            img_orig = cv2.imread(img_path, cv2.IMREAD_IGNORE_ORIENTATION | cv2.IMREAD_COLOR)
+            img_orig = cv2.imread(img_path, cv2.IMREAD_COLOR)
             if os.path.isfile(segment_path):
-                segment_orig = cv2.imread(segment_path, cv2.IMREAD_IGNORE_ORIENTATION | cv2.IMREAD_COLOR)
-                segment = cv2.cvtColor(segment_orig, cv2.COLOR_BGR2RGB)
+                segment = cv2.imread(segment_path, cv2.IMREAD_COLOR)[:, :, 0]
             else:
-                segment = None
+                raise
         else:
-            img_orig = cv2.imdecode(self.mem_dict[img_path], cv2.IMREAD_IGNORE_ORIENTATION | cv2.IMREAD_COLOR)
+            img_orig = cv2.imdecode(self.mem_dict[img_path], cv2.IMREAD_COLOR)
             if self.mem_dict[segment_path] is not None:
-                segment_orig = cv2.imdecode(self.mem_dict[segment_path],
-                                            cv2.IMREAD_IGNORE_ORIENTATION | cv2.IMREAD_COLOR)
-                segment = cv2.cvtColor(segment_orig, cv2.COLOR_BGR2RGB)
+                segment = cv2.imdecode(self.mem_dict[segment_path], cv2.IMREAD_COLOR)[:, :, 0]
             else:
-                segment = None
+                raise
 
         img = cv2.cvtColor(img_orig, cv2.COLOR_BGR2RGB)
 
@@ -237,15 +234,9 @@ class ImagenetColorSegmentData(Dataset):
             img = transformed['image']
             if segment is not None:
                 segment = transformed['mask']
+                segment = segment.astype(np.int64)
             if not self.training:
                 img_orig = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-
-        if segment is not None:
-            # TODO
-            segment_masks = extract_colorsegment_masks(segment, 20)
-
-        else:
-            segment_masks = np.zeros((20,) + img.shape[:2], dtype=bool)
 
         if self.debug:
             plt.imshow(img)
@@ -262,7 +253,7 @@ class ImagenetColorSegmentData(Dataset):
             ab = self.to_tensor_ab(ab)
 
         if self.training:
-            return grey, ab, segment_masks
+            return grey, ab, segment
 
         return grey, ab, img_orig, grey_orig
 

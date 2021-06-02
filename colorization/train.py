@@ -222,12 +222,18 @@ def train(model: Model,
         print('loading sampler...')
         sampler.load_state_dict(state['sampler'])
 
+    if len(sampler) > len(trainset):
+        sampler = SavableShuffleSampler(trainset, shuffle=not debug)
+        print('recreate the sampler, trainset changed...')
+
     print(f'        Loss: {loss_type}')
     print(f'   Optimizer: {optimizer.__class__.__name__}')
     print(f'   Iteration: {iteration}/{iterations}')
     print(f'      Warmup: {warmup}')
     print(f'  Milestones: {milestones}')
     print(f'     Growing: {sparse_growing_parameters}')
+    print(f'   Traindata: {len(trainset)} images')
+    print(f'    Testdata: {len(testset)} images')
     print(f' Sampler idx: {sampler.index}')
     print(f'Current step: {scheduler._step_count}')
 

@@ -132,6 +132,8 @@ def train(model: Model,
           lambda_ccl=0.0,
           loss_type='L2',
           ccl_version='linear',
+          alpha=5,
+          gamma=.5,
           regularization_l2: float = 0.,
           warmup=5000,
           milestones=[],
@@ -165,13 +167,21 @@ def train(model: Model,
     writer = SummaryWriter(log_dir=os.path.join(model_dir, 'logs'))
 
     if loss_type == 'L2':
-        criterion = L2Loss()
+        criterion = L2Loss(weighted=False)
+    elif loss_type == 'L2W':
+        criterion = L2Loss(weighted=True, alpha=alpha, gamma=gamma)
     elif loss_type == 'L1':
-        criterion = L1Loss()
+        criterion = L1Loss(weighted=False)
+    elif loss_type == 'L1W':
+        criterion = L1Loss(weighted=True, alpha=alpha, gamma=gamma)
     elif loss_type == 'L2+CCL':
         criterion = L2CCLoss(lambda_ccl=lambda_ccl, ccl_version=ccl_version)
+    elif loss_type == 'L2W+CCL':
+        criterion = L2CCLoss(lambda_ccl=lambda_ccl, ccl_version=ccl_version, weighted=True, alpha=alpha, gamma=gamma)
     elif loss_type == 'L1+CCL':
         criterion = L1CCLoss(lambda_ccl=lambda_ccl, ccl_version=ccl_version)
+    elif loss_type == 'L1W+CCL':
+        criterion = L1CCLoss(lambda_ccl=lambda_ccl, ccl_version=ccl_version, weighted=True, alpha=alpha, gamma=gamma)
     else:
         raise NotImplementedError()
 
@@ -229,7 +239,7 @@ def train(model: Model,
     psnr = PSNR()
     pbar = tqdm(total=iterations, initial=iteration)
     while iteration < iterations:
-        loss_str = ' - '.join([f'{key}: {val:.3f} ' for key, val in avg_running_loss.items()])
+        loss_str = ' - '.join([f'{key}: {val:.5f} ' for key, val in avg_running_loss.items()])
         pbar.set_description(
             f'[Ep: {sampler.epoch} | B: {batch_size} | Im: {input_size[0]}x{input_size[1]}]  loss: {loss_str} - {img_per_sec:.2f} img/s')
         for data in trainloader:

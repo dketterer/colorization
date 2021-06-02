@@ -28,12 +28,15 @@ def parse_args(args):
     parser_train.add_argument('--val_segment_masks', metavar='path', type=str, help='path to images')
     parser_train.add_argument('--backbone', action='store', type=str, help='backbone model', default='UNet_bc64_d4')
     parser_train.add_argument('--head_type', type=str, help='head type', default='regression')
-    parser_train.add_argument('--loss', metavar='selection', type=str, choices=['L2', 'L1', 'L1+CCL', 'L2+CCL'],
+    parser_train.add_argument('--loss', metavar='selection', type=str,
+                              choices=['L2', 'L1', 'L1+CCL', 'L2+CCL', 'L2W', 'L1W', 'L1W+CCL', 'L2W+CCL'],
                               default='L2')
     parser_train.add_argument('--lambda_ccl', metavar='value', type=float, default=0.5)
     parser_train.add_argument('--ccl_version', metavar='selection', type=str, choices=['linear', 'euclidean', 'square'],
                               default='linear')
     parser_train.add_argument('--lr', metavar='value', type=float, help='Learning rate', default=0.0003)
+    parser_train.add_argument('--alpha', metavar='value', type=float, help='Weighting factor alpha', default=5)
+    parser_train.add_argument('--gamma', metavar='value', type=float, help='Weighting factor gamma', default=.5)
     parser_train.add_argument('--regularization_l2', '-reg_l2', metavar='value', type=float,
                               help='Weight regularization', default=0.)
     parser_train.add_argument('--momentum', metavar='value', type=float, help='SGD Optimizer Momentum', default=0.9)
@@ -104,7 +107,8 @@ def main(args):
                     optimizer_name=args.optimizer, lambda_ccl=args.lambda_ccl, loss_type=args.loss,
                     ccl_version=args.ccl_version, train_segment_masks_path=args.segment_masks,
                     val_segment_masks_path=args.val_segment_masks,
-                    lr=args.lr, regularization_l2=args.regularization_l2, iterations=args.iterations,
+                    lr=args.lr, alpha=args.alpha, gamma=args.gamma,
+                    regularization_l2=args.regularization_l2, iterations=args.iterations,
                     val_iterations=args.val_iterations, milestones=args.milestones,
                     warmup=args.warmup, verbose=args.verbose, debug=args.debug)
 

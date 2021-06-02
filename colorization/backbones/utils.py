@@ -24,7 +24,7 @@ class PadToX(nn.Module):
                 x = x.float()
 
                 x = F.pad(x, [diffX // 2, diffX - diffX // 2,
-                              diffY // 2, diffY - diffY // 2])
+                              diffY // 2, diffY - diffY // 2], mode='reflect')
         return diffX, diffY, x
 
     def remove_pad(self, x, diffX, diffY):

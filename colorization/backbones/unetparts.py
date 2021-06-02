@@ -12,7 +12,7 @@ from torchvision.models.resnet import BasicBlock, Bottleneck
 class DoubleConv(nn.Module):
     """(convolution => [BN] => ReLU) * 2"""
 
-    def __init__(self, in_channels, out_channels, mid_channels=None, fix_bias=False):
+    def __init__(self, in_channels, out_channels, mid_channels=None, fix_bias=True):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -107,6 +107,6 @@ class UpPad(nn.Module):
                 x1 = x1.float()
 
                 x1 = F.pad(x1, [diffX // 2, diffX - diffX // 2,
-                                diffY // 2, diffY - diffY // 2])
+                                diffY // 2, diffY - diffY // 2], mode='reflect')
 
         return x1

@@ -45,7 +45,7 @@ class DenseNet(models.DenseNet):
             if i != len(self.block_config) - 1:
                 outputs.append(x)
                 x = self.features._modules[f'transition{i + 1}'](x)
-        x = self.features.norm5(x)
+        #x = self.features.norm5(x)
         outputs.append(x)
 
         return outputs

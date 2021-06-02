@@ -79,6 +79,8 @@ class UNetDualEncoder(nn.Module):
         model_dict.update(state_dict)
         # 3. load the new state dict
         self.second_encoder.load_state_dict(state_dict)
+
+        # Fix params in the second encoder
         for param in self.second_encoder.parameters():
             param.requires_grad = False
 

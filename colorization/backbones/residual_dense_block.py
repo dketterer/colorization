@@ -13,7 +13,8 @@ class Dense(nn.Module):
                               bias=False)
 
     def forward(self, x):
-        out = F.leaky_relu_(self.conv(x))
+        out = self.conv(x)
+        out = F.leaky_relu_(out)
         out = torch.cat((x, out), 1)
         return out
 

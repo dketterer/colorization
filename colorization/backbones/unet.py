@@ -46,9 +46,12 @@ class UNet(nn.Module):
 
         def init_layer(layer):
             if isinstance(layer, nn.Conv2d):
-                nn.init.xavier_uniform_(layer.weight)
+                nn.init.xavier_normal_(layer.weight)
                 if layer.bias is not None:
                     nn.init.constant_(layer.bias, val=0)
+            elif isinstance(layer, nn.BatchNorm2d):
+                nn.init.constant_(layer.weight, 1)
+                nn.init.constant_(layer.bias, 0)
 
         self.apply(init_layer)
 
@@ -71,3 +74,8 @@ def UNet_bc64_d4():
 @register
 def UNet_bc64_d5():
     return UNet(in_channels=1, base_channel_size=64, bilinear=True, depth=5)
+
+
+@register
+def UNet_bc32_d4():
+    return UNet(in_channels=1, base_channel_size=32, bilinear=True, depth=4)

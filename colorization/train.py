@@ -30,7 +30,7 @@ from colorization.chkpt_utils import delete_older_then_n
 from colorization.model import Model
 from colorization.preprocessing import to_tensor_l, to_tensor_ab
 from colorization.infer import infer
-from colorization.metrics import PSNR, SSIM, psnr_func
+from colorization.metrics import PSNR, SSIM, PSNR_RGB
 
 
 def imshow(img):
@@ -56,6 +56,8 @@ def get_validation_metrics(validationloader, model, criterion, ccl_version='line
 
     ssim = SSIM(window_size=11, gaussian_weights=True).cuda()
     ssim_uniform = SSIM(window_size=7, gaussian_weights=False).cuda()
+    psnr = PSNR()
+    # psnr_rgb = PSNR_RGB()
     for i, data in enumerate(tqdm(validationloader, leave=False, desc='Validation')):
         if i == 5000:
             break
@@ -72,7 +74,8 @@ def get_validation_metrics(validationloader, model, criterion, ccl_version='line
             outputs = model(inputs)
 
             metrics_results[0] += criterion(outputs, labels, segment_masks)[0]
-            metrics_results[1] += PSNR()(outputs, labels)
+            metrics_results[1] += psnr(outputs, labels)
+            # metrics_results[1] += psnr_rgb(outputs, labels, inputs)
             metrics_results[2] += ssim(outputs, labels)
             metrics_results[3] += ssim_uniform(outputs, labels)
             if segment_masks is not None:
@@ -223,6 +226,7 @@ def train(model: Model,
     running_loss, avg_running_loss = defaultdict(float), defaultdict(float)
     tic = time.time()
     changed_batch_size = True
+    psnr = PSNR()
     pbar = tqdm(total=iterations, initial=iteration)
     while iteration < iterations:
         loss_str = ' - '.join([f'{key}: {val:.3f} ' for key, val in avg_running_loss.items()])
@@ -256,7 +260,7 @@ def train(model: Model,
                 outputs = model(inputs)
                 crit_labels = [*labels] if train_segment_masks_path else [labels]
                 loss, loss_dict = criterion(outputs, *crit_labels)
-                _psnr = psnr_func(outputs, labels[0] if train_segment_masks_path else labels)
+                _psnr = psnr(outputs, labels[0] if train_segment_masks_path else labels)
 
             scaler.scale(loss).backward()
             scaler.step(optimizer)

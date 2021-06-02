@@ -137,7 +137,7 @@ def train(model: Model,
           regularization_l2: float = 0.,
           warmup=5000,
           milestones=[],
-          optimizer_name: str = 'adam',
+          optimizer_name: str = 'sgd',
           print_every: int = 250,
           debug=False):
     model.train()
@@ -221,6 +221,7 @@ def train(model: Model,
         sampler.load_state_dict(state['sampler'])
 
     print(f'        Loss: {loss_type}')
+    print(f'   Optimizer: {optimizer.__class__.__name__}')
     print(f'   Iteration: {iteration}/{iterations}')
     print(f'      Warmup: {warmup}')
     print(f'  Milestones: {milestones}')

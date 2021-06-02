@@ -40,7 +40,7 @@ def parse_args(args):
     parser_train.add_argument('--regularization_l2', '-reg_l2', metavar='value', type=float,
                               help='Weight regularization', default=0.)
     parser_train.add_argument('--momentum', metavar='value', type=float, help='SGD Optimizer Momentum', default=0.9)
-    parser_train.add_argument('--optimizer', metavar='selection', help='The Optimizer', type=str, default='sgd',
+    parser_train.add_argument('--optimizer', metavar='selection', help='The Optimizer', type=str, default='adam',
                               choices=['adam', 'sgd'])
     parser_train.add_argument('--iterations', '-iters', metavar='value', type=int, help='How many mini batches',
                               required=True)

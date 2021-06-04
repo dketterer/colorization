@@ -154,16 +154,6 @@ def train(model: Model,
     sys.path.insert(0, os.path.dirname(transform_file))
     transforms = __import__(os.path.splitext(os.path.basename(transform_file))[0])
 
-    trainset = ImagenetData(train_data_path, transform=None, transform_l=to_tensor_l, transform_ab=to_tensor_ab)
-    testset = ImagenetData(val_data_path, transform=transforms.get_val_transform(1024), transform_l=to_tensor_l,
-                           transform_ab=to_tensor_ab)
-    if train_segment_masks_path or val_segment_masks_path:
-        trainset = ImagenetColorSegmentData(train_data_path, train_segment_masks_path, transform=None,
-                                            transform_l=to_tensor_l, transform_ab=to_tensor_ab)
-        testset = ImagenetColorSegmentData(val_data_path, val_segment_masks_path,
-                                           transform=transforms.get_val_transform(1024), transform_l=to_tensor_l,
-                                           transform_ab=to_tensor_ab)
-
     model_dir = os.path.dirname(state['path'])
 
     writer = SummaryWriter(log_dir=os.path.join(model_dir, 'logs'))
@@ -216,6 +206,21 @@ def train(model: Model,
         print('loading scheduler...')
         scheduler.load_state_dict(state['scheduler'])
     iteration = state.get('iteration', 0)
+
+    if iteration >= iterations:
+        print('Training already done.')
+        return
+
+    if train_segment_masks_path or val_segment_masks_path:
+        trainset = ImagenetColorSegmentData(train_data_path, train_segment_masks_path, transform=None,
+                                            transform_l=to_tensor_l, transform_ab=to_tensor_ab)
+        testset = ImagenetColorSegmentData(val_data_path, val_segment_masks_path,
+                                           transform=transforms.get_val_transform(1024), transform_l=to_tensor_l,
+                                           transform_ab=to_tensor_ab)
+    else:
+        trainset = ImagenetData(train_data_path, transform=None, transform_l=to_tensor_l, transform_ab=to_tensor_ab)
+        testset = ImagenetData(val_data_path, transform=transforms.get_val_transform(1024), transform_l=to_tensor_l,
+                               transform_ab=to_tensor_ab)
 
     sampler = SavableShuffleSampler(trainset, shuffle=not debug)
     if 'sampler' in state:
@@ -355,7 +360,7 @@ def train(model: Model,
 
                 # images from validation
                 predicted_images = infer(model=model,
-                                         image_path=val_data_path,
+                                         dataset=testset,
                                          target_path=os.path.join(model_dir, f'predictions-{iteration}'),
                                          batch_size=1,
                                          img_limit=20,
@@ -367,7 +372,7 @@ def train(model: Model,
 
                 # images from training
                 predicted_images = infer(model=model,
-                                         image_path=train_data_path,
+                                         dataset=trainset,
                                          target_path=os.path.join(model_dir, f'predictions-training-{iteration}'),
                                          batch_size=1,
                                          img_limit=20,

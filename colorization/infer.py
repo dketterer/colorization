@@ -2,7 +2,7 @@ import os
 
 import cv2
 from torch.cuda.amp import autocast
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 import torch
 import numpy as np
@@ -26,22 +26,10 @@ def stich_image(grey_orig, ab_pred) -> np.ndarray:
     return predicted
 
 
-def stich_debug_image(grey_orig, ab_pred, img_orig) -> np.ndarray:
-    h, w = grey_orig.shape[:2]
-    result = np.empty((h, w * 3, 3), dtype='uint8')
-    result[:, :w, :] = img_orig
-    result[:, w:w * 2, :] = cv2.cvtColor(grey_orig, cv2.COLOR_GRAY2BGR)
-
-    predicted = stich_image(grey_orig, ab_pred)
-
-    result[:, 2 * w:, :] = predicted
-
-    return result
-
-
 def infer(model: Model,
-          image_path: str,
           target_path: str,
+          dataset: Dataset = None,
+          image_path: str = '',
           batch_size: int = 8,
           img_limit: int = 50,
           debug: bool = False,
@@ -49,9 +37,11 @@ def infer(model: Model,
           tensorboard: bool = False):
     if not os.path.exists(target_path):
         os.makedirs(target_path, exist_ok=True)
+    assert bool(dataset) != bool(image_path), 'Specify only one: dataset or image_path'
+    if not dataset and image_path:
+        dataset = ImagenetData(image_path, transform=transform, transform_l=to_tensor_l, transform_ab=to_tensor_ab,
+                               training=False)
 
-    dataset = ImagenetData(image_path, transform=transform, transform_l=to_tensor_l, transform_ab=to_tensor_ab,
-                           training=False)
     dataloader = DataLoader(dataset,
                             batch_size=batch_size,
                             shuffle=False,
@@ -97,3 +87,16 @@ def infer(model: Model,
             break
     if tensorboard:
         return results
+
+
+def stich_debug_image(grey_orig, ab_pred, img_orig) -> np.ndarray:
+    h, w = grey_orig.shape[:2]
+    result = np.empty((h, w * 3, 3), dtype='uint8')
+    result[:, :w, :] = img_orig
+    result[:, w:w * 2, :] = cv2.cvtColor(grey_orig, cv2.COLOR_GRAY2BGR)
+
+    predicted = stich_image(grey_orig, ab_pred)
+
+    result[:, 2 * w:, :] = predicted
+
+    return result

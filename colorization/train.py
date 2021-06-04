@@ -205,6 +205,11 @@ def train(model: Model,
         testset = ImagenetData(val_data_path, transform=transforms.get_val_transform(1024), transform_l=to_tensor_l,
                                transform_ab=to_tensor_ab)
 
+    trainset_infer = ImagenetData(train_data_path, transform=transforms.get_val_transform(1024), transform_l=to_tensor_l, transform_ab=to_tensor_ab,
+                               training=False)
+    testset_infer = ImagenetData(val_data_path, transform=transforms.get_val_transform(1024), transform_l=to_tensor_l, transform_ab=to_tensor_ab,
+                               training=False)
+
     sampler = SavableShuffleSampler(trainset, shuffle=not debug)
     if 'sampler' in state:
         print('loading sampler...')
@@ -342,7 +347,7 @@ def train(model: Model,
 
                 # images from validation
                 predicted_images = infer(model=model,
-                                         dataset=testset,
+                                         dataset=testset_infer,
                                          target_path=os.path.join(model_dir, f'predictions-{iteration}'),
                                          batch_size=1,
                                          img_limit=20,
@@ -354,7 +359,7 @@ def train(model: Model,
 
                 # images from training
                 predicted_images = infer(model=model,
-                                         dataset=trainset,
+                                         dataset=trainset_infer,
                                          target_path=os.path.join(model_dir, f'predictions-training-{iteration}'),
                                          batch_size=1,
                                          img_limit=20,

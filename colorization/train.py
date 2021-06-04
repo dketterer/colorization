@@ -33,23 +33,6 @@ from colorization.infer import infer
 from colorization.metrics import PSNR, SSIM, PSNR_RGB
 
 
-def imshow(img):
-    img = (img / 2 + 0.5) * 255  # unnormalize
-    img = torchvision.utils.make_grid(img)
-    npimg = img.numpy()
-    # npimg[0, ...] *= 255.
-    # print(np.min(npimg[0, ...]), np.max(npimg[0, ...]))
-    # print(np.min(npimg[1, ...]), np.max(npimg[1, ...]))
-    # print(np.min(npimg[2, ...]), np.max(npimg[2, ...]))
-    # npimg = npimg.reshape(3, npimg.shape[2], npimg.shape[0] * npimg.shape[3])
-    npimg = np.round(npimg).astype(np.uint8)
-    npimg = cv2.cvtColor(np.transpose(npimg, (1, 2, 0)), cv2.COLOR_LAB2RGB)
-    plt.imshow(npimg)
-    # plt.imshow(npimg[..., 0])
-    plt.show()
-
-
-# TODO gleiche methode wie training
 def get_validation_metrics(validationloader, model, criterion, ccl_version='linear'):
     model = model.eval()
     metrics_results = torch.zeros(5).cuda()
@@ -344,7 +327,6 @@ def train(model: Model,
                 tic = time.time()
             if iteration == iterations or iteration % val_iterations == 0:
                 # run validation
-                tic = time.time()
                 torch.backends.cudnn.benchmark = False
                 model = model.eval()
                 test_loader = DataLoader(testset,

@@ -21,88 +21,113 @@ class ColorConsistencyLoss(nn.Module):
 
     """
 
-    def __init__(self, mode='linear'):
+    def __init__(self, mode='linear', target='prediction'):
         super(ColorConsistencyLoss, self).__init__()
         assert mode in ['square', 'euclidean', 'linear']
+        assert target in ['prediction', 'gt']
         self.mode = mode
+        self.target = target
 
-    def forward(self, x: Tensor, masks: Tensor) -> Tensor:
-        inp_dtype = x.dtype
+    def forward(self, ab_prediction: Tensor, masks: Tensor, ab_gt: Tensor = None) -> Tensor:
+        inp_dtype = ab_prediction.dtype if self.target == 'prediction' else ab_gt.dtype
+        assert ab_prediction.size() == ab_gt.size()
+        if self.target == 'gt':
+            assert ab_gt is not None
         # x: (B, C, H, W)
         # masks: (B, H, W) LongTensor
         masks.requires_grad = False
         # masks: (B, S, H, W)
-        masks = F.one_hot(masks).bool().permute((0, 3, 1, 2)).contiguous()
+        masks = F.one_hot(masks).bool().permute((0, 3, 1, 2))
 
         # expand x and the masks to make the loss calculation vectorized per image
-        x_exp = torch.unsqueeze(x, 2).expand(x.size()[0:2] + (len(masks[0]),) + x.size()[2:])
+        ab_pred_exp = torch.unsqueeze(ab_prediction, 2).expand(
+            ab_prediction.size()[0:2] + (len(masks[0]),) + ab_prediction.size()[2:])
+
+        if self.target == 'gt':
+            ab_gt_exp = torch.unsqueeze(ab_gt, 2).expand(
+                ab_gt.size()[0:2] + (len(masks[0]),) + ab_gt.size()[2:])
+
         batch_segment_masks_exp = torch.unsqueeze(masks, 1).expand(
-            x.size()[0:2] + (len(masks[0]),) + x.size()[2:]).contiguous()
+            ab_prediction.size()[0:2] + (len(masks[0]),) + ab_prediction.size()[2:]).contiguous()
         batch_segment_masks_exp.requires_grad = False
+
+        target = ab_pred_exp if self.target == 'prediction' else ab_gt_exp
 
         # parallel for all in batch dim
         # for each channel (a, b)
-
-        masked = torch.mul(x_exp, batch_segment_masks_exp)  # (B, C, S, H, W)
+        masked = torch.mul(target, batch_segment_masks_exp)  # (B, C, S, H, W)
         masked = masked.detach()
         x_mean = masked.sum(-1).sum(-1) / (batch_segment_masks_exp.sum(-1).sum(-1) + 1e-8)  # (B, C, S)
         # (B, C, S, H, W) all values in a segment are the same
-        x_mean = torch.unsqueeze(torch.unsqueeze(x_mean, -1), -1).expand_as(x_exp)
+        x_mean = torch.unsqueeze(torch.unsqueeze(x_mean, -1), -1).expand_as(ab_pred_exp)
         x_mean = x_mean.detach()
 
         if self.mode == 'square':
             # inputs to mse: (B, C, len(segment))
             with autocast(enabled=False):
-                loss = F.mse_loss(x_exp[batch_segment_masks_exp].float(),
+                loss = F.mse_loss(ab_pred_exp[batch_segment_masks_exp].float(),
                                   x_mean[batch_segment_masks_exp].float()).type(inp_dtype)  # scalar, can be nan
         elif self.mode == 'euclidean':
             # inputs to square: (B, C, len(segment))
-            squared = torch.square(x_exp[batch_segment_masks_exp] -
+            squared = torch.square(ab_pred_exp[batch_segment_masks_exp] -
                                    x_mean[batch_segment_masks_exp])  # (B, C, S, len(segment))
-            summed = squared.reshape(x.size()[0:2] + (-1,)).sum(1)
+            summed = squared.reshape(ab_prediction.size()[0:2] + (-1,)).sum(1)
             # gradient of sqrt(0) is nan, eps is required
             loss = torch.sqrt_(summed + 1e-8).mean()
         elif self.mode == 'linear':
             # inputs to L1: (B, C, len(segment))
             with autocast(enabled=False):
-                loss = F.smooth_l1_loss(x_exp[batch_segment_masks_exp].float(),
+                loss = F.smooth_l1_loss(ab_pred_exp[batch_segment_masks_exp].float(),
                                         x_mean[batch_segment_masks_exp].float()).type(inp_dtype)  # scalar, can be nan
         if torch.isnan(loss):
             return torch.tensor(0.0)
 
         return loss
 
+    def __repr__(self):
+        return f"CCL: {self.mode} on {self.target}"
+
 
 class L1CCLoss(nn.Module):
-    def __init__(self, lambda_ccl, ccl_version, weighted=False, alpha=5, gamma=.5):
+    def __init__(self, lambda_ccl, ccl_version, ccl_target='prediction', weighted=False, alpha=5, gamma=.5):
         super().__init__()
         self.lambda_ccl = lambda_ccl
         self.ccl_version = ccl_version
-        self.ccl = ColorConsistencyLoss(self.ccl_version)
+        self.ccl_target = ccl_target
+        self.ccl = ColorConsistencyLoss(self.ccl_version, ccl_target)
         self.l1 = L1Loss(weighted, alpha=alpha, gamma=gamma)
 
     def forward(self, input: Tensor, target: Tensor, segment_masks: LongTensor):
-        ccl_loss = self.ccl(input, segment_masks)
+        ccl_loss = self.ccl(input, segment_masks, target)
         l1_loss = self.l1(input, target)[0]
         loss = l1_loss + ccl_loss * self.lambda_ccl
         return loss, {'L1CCLoss': loss, f'ColorConsistencyLoss-{self.ccl_version}': ccl_loss,
                       'L1Loss': l1_loss}
 
+    def __repr__(self):
+        return f"Base: {self.l1.__repr__()}\n" \
+               f"Addition: {self.ccl.__repr__()}"
+
 
 class L2CCLoss(nn.Module):
-    def __init__(self, lambda_ccl, ccl_version, weighted=False, alpha=5, gamma=.5):
+    def __init__(self, lambda_ccl, ccl_version, ccl_target='prediction', weighted=False, alpha=5, gamma=.5):
         super().__init__()
         self.lambda_ccl = lambda_ccl
         self.ccl_version = ccl_version
-        self.ccl = ColorConsistencyLoss(self.ccl_version)
+        self.ccl_target = ccl_target
+        self.ccl = ColorConsistencyLoss(self.ccl_version, ccl_target)
         self.l2 = L2Loss(weighted, alpha=alpha, gamma=gamma)
 
     def forward(self, input: Tensor, target: Tensor, segment_masks: LongTensor):
-        ccl_loss = self.ccl(input, segment_masks)
+        ccl_loss = self.ccl(input, segment_masks, target)
         l2_loss = self.l2(input, target)[0]
         loss = l2_loss + ccl_loss * self.lambda_ccl
         return loss, {'L2CCLoss': loss, f'ColorConsistencyLoss-{self.ccl_version}': ccl_loss,
                       'MSE': l2_loss}
+
+    def __repr__(self):
+        return f"Base: {self.l2.__repr__()}\n" \
+               f"Addition: {self.ccl.__repr__()}"
 
 
 class L2Loss(nn.Module):
@@ -125,6 +150,9 @@ class L2Loss(nn.Module):
             l2_loss = (l2_loss * weights_implied)
         l2_loss = l2_loss.sum((1, 2, 3)).mean()
         return l2_loss, {'MSE': l2_loss}
+
+    def __repr__(self):
+        return f"L2: {self.prior_weights.__repr__() if self.weighted else 'standard'}"
 
 
 class L1Loss(nn.Module):
@@ -152,6 +180,8 @@ class L1Loss(nn.Module):
 class PriorWeights(nn.Module):
     def __init__(self, alpha=5, gamma=.5):
         super(PriorWeights, self).__init__()
+        self.alpha = alpha
+        self.gamma = gamma
         prior_probs = Q_PRIOR
 
         # define uniform probability
@@ -181,3 +211,6 @@ class PriorWeights(nn.Module):
         nns = cdist.argmin(1)
         weights_implied = self.implied_prior[nns].reshape(b, 1, h, w).expand(b, c, h, w)
         return weights_implied
+
+    def __repr__(self):
+        return f"weighted: alpha: {self.alpha:.2f}, gamma: {self.gamma:.2f}"

@@ -153,10 +153,20 @@ def train(model: Model,
         criterion = L2CCLoss(lambda_ccl=lambda_ccl, ccl_version=ccl_version)
     elif loss_type == 'L2W+CCL':
         criterion = L2CCLoss(lambda_ccl=lambda_ccl, ccl_version=ccl_version, weighted=True, alpha=alpha, gamma=gamma)
+    elif loss_type == 'L2+CCL-gt':
+        criterion = L2CCLoss(lambda_ccl=lambda_ccl, ccl_version=ccl_version, ccl_target='gt', weighted=False)
+    elif loss_type == 'L2W+CCL-gt':
+        criterion = L2CCLoss(lambda_ccl=lambda_ccl, ccl_version=ccl_version, ccl_target='gt', weighted=True,
+                             alpha=alpha, gamma=gamma)
     elif loss_type == 'L1+CCL':
         criterion = L1CCLoss(lambda_ccl=lambda_ccl, ccl_version=ccl_version)
     elif loss_type == 'L1W+CCL':
         criterion = L1CCLoss(lambda_ccl=lambda_ccl, ccl_version=ccl_version, weighted=True, alpha=alpha, gamma=gamma)
+    elif loss_type == 'L1+CCL-gt':
+        criterion = L1CCLoss(lambda_ccl=lambda_ccl, ccl_version=ccl_version, ccl_target='gt', weighted=False)
+    elif loss_type == 'L1W+CCL-gt':
+        criterion = L1CCLoss(lambda_ccl=lambda_ccl, ccl_version=ccl_version, ccl_target='gt', weighted=True,
+                             alpha=alpha, gamma=gamma)
     else:
         raise NotImplementedError()
 
@@ -220,7 +230,8 @@ def train(model: Model,
         print('recreate the sampler, trainset changed...')
 
     print(f'        Loss: {loss_type}')
-    print(f'   Optimizer: {optimizer.__class__.__name__}')
+    print(criterion)
+    print(f'   Optimizer: {optimizer.__class__.__name__} (LR:{optimizer.param_groups[0]["lr"]:.6f})')
     print(f'   Iteration: {iteration}/{iterations}')
     print(f'      Warmup: {warmup}')
     print(f'  Milestones: {milestones}')

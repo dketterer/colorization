@@ -29,7 +29,8 @@ def parse_args(args):
     parser_train.add_argument('--backbone', action='store', type=str, help='backbone model', default='UNet_bc64_d4')
     parser_train.add_argument('--head_type', type=str, help='head type', default='regression')
     parser_train.add_argument('--loss', metavar='selection', type=str,
-                              choices=['L2', 'L1', 'L1+CCL', 'L2+CCL', 'L2W', 'L1W', 'L1W+CCL', 'L2W+CCL'],
+                              choices=['L2', 'L1', 'L1+CCL', 'L2+CCL', 'L2W', 'L1W', 'L1W+CCL', 'L2W+CCL', 'L1+CCL-gt',
+                                       'L1W+CCL-gt', 'L2+CCL-gt', 'L2W+CCL-gt'],
                               default='L2')
     parser_train.add_argument('--lambda_ccl', metavar='value', type=float, default=0.5)
     parser_train.add_argument('--ccl_version', metavar='selection', type=str, choices=['linear', 'euclidean', 'square'],

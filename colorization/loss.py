@@ -176,6 +176,9 @@ class L1Loss(nn.Module):
         l1_loss = l1_loss.sum((1, 2, 3)).mean()
         return l1_loss, {'L1Loss': l1_loss}
 
+    def __repr__(self):
+        return f"L1: {self.prior_weights.__repr__() if self.weighted else 'standard'}"
+
 
 class PriorWeights(nn.Module):
     def __init__(self, alpha=5, gamma=.5):

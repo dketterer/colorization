@@ -4,7 +4,7 @@ In this project I colorize black-and-white images with the help of neural networ
 for the University Esslingen but try to further maintain and develop it.
 
 It started in 2019 with a U-Net and L1/L2 loss. The code from then is written in Tensorflow 1/Keras. You still find that
-code on the master branch.
+code on the [keras-version](https://github.com/dketterer/colorization/tree/keras-version) branch.
 
 This branch is a rewrite in Pytorch.
 

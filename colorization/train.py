@@ -215,10 +215,12 @@ def train(model: Model,
         testset = ImagenetData(val_data_path, transform=transforms.get_val_transform(1024), transform_l=to_tensor_l,
                                transform_ab=to_tensor_ab)
 
-    trainset_infer = ImagenetData(train_data_path, transform=transforms.get_val_transform(1024), transform_l=to_tensor_l, transform_ab=to_tensor_ab,
-                               training=False)
-    testset_infer = ImagenetData(val_data_path, transform=transforms.get_val_transform(1024), transform_l=to_tensor_l, transform_ab=to_tensor_ab,
-                               training=False)
+    trainset_infer = ImagenetData(train_data_path, transform=transforms.get_val_transform(1024),
+                                  transform_l=to_tensor_l, transform_ab=to_tensor_ab,
+                                  training=False)
+    testset_infer = ImagenetData(val_data_path, transform=transforms.get_val_transform(1024), transform_l=to_tensor_l,
+                                 transform_ab=to_tensor_ab,
+                                 training=False)
 
     sampler = SavableShuffleSampler(trainset, shuffle=not debug)
     if 'sampler' in state:

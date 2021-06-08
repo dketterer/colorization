@@ -63,6 +63,7 @@ def parse_args(args):
     parser_infer.add_argument('--img_limit', metavar='value', type=int, help='Only first N images in the folder',
                               default=50)
     parser_infer.add_argument('--debug', action='store_true', help='Stich original image, grey and predicted together')
+    parser_infer.add_argument('--transform', metavar='path', help='Python file with a transform function')
 
     parsed_args = parser.parse_args(args)
     return parsed_args
@@ -114,12 +115,20 @@ def main(args):
                     warmup=args.warmup, verbose=args.verbose, debug=args.debug)
 
     elif args.command == 'infer':
+        if args.transform:
+            assert os.path.isfile(args.transform)
+            sys.path.insert(0, os.path.dirname(args.transform))
+            transforms = __import__(os.path.splitext(os.path.basename(args.transform))[0])
+            transform = transforms.get_transform()
+        else:
+            transform = None
+
         infer.infer(model=model,
                     image_path=args.images,
                     target_path=args.target_path,
                     batch_size=args.batch_size,
                     img_limit=args.img_limit,
-                    transform=None,
+                    transform=transform,
                     debug=args.debug)
 
 

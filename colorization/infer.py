@@ -5,11 +5,14 @@ from torch.cuda.amp import autocast
 from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 import torch
+import torch.nn.functional as F
 import numpy as np
+import scipy.stats as st
 
 from colorization.model import Model
 from colorization.data import ImagenetData
 from colorization.preprocessing import to_tensor_l, to_tensor_ab
+from colorization.metrics import create_window
 
 
 def stich_image(grey_orig, ab_pred) -> np.ndarray:
@@ -24,6 +27,17 @@ def stich_image(grey_orig, ab_pred) -> np.ndarray:
     predicted = cv2.cvtColor(fused, cv2.COLOR_LAB2BGR)
 
     return predicted
+
+
+def gkern(kernlen=21, nsig=3):
+    """Returns a 2D Gaussian kernel array."""
+
+    interval = (2 * nsig + 1.) / (kernlen)
+    x = np.linspace(-nsig - interval / 2., nsig + interval / 2., kernlen + 1)
+    kern1d = np.diff(st.norm.cdf(x))
+    kernel_raw = np.sqrt(np.outer(kern1d, kern1d))
+    kernel = kernel_raw / kernel_raw.sum()
+    return kernel
 
 
 def infer(model: Model,
@@ -47,9 +61,13 @@ def infer(model: Model,
                             shuffle=False,
                             num_workers=4,
                             pin_memory=True,
-                            prefetch_factor=batch_size)
+                            prefetch_factor=batch_size * 2)
 
     results = []
+
+    gaussian_filter = create_window(7, batch_size, gaussian_weights=True)
+    if torch.cuda.is_available():
+        gaussian_filter = gaussian_filter.cuda()
 
     model = model.eval()
     if torch.cuda.is_available():
@@ -62,21 +80,30 @@ def infer(model: Model,
 
         if torch.cuda.is_available():
             grey = grey.cuda()
+        if debug:
+            grey_smooth = F.conv2d(grey, gaussian_filter, padding=3, groups=batch_size)
         with torch.no_grad():
             with autocast():
                 prediction = model(grey)
+                prediction_smooth = model(grey_smooth)
         del grey
+        if debug:
+            del grey_smooth
 
         prediction = prediction.to('cpu:0').numpy()
         prediction = np.transpose(prediction, (0, 2, 3, 1))
+        if debug:
+            prediction_smooth = prediction_smooth.to('cpu:0').numpy()
+            prediction_smooth = np.transpose(prediction_smooth, (0, 2, 3, 1))
         grey_orig = grey_orig.numpy()
         img_orig = img_orig.numpy()
 
-        for j in range(prediction.shape[0]):
+        for batch_idx in range(prediction.shape[0]):
             if debug:
-                img_result = stich_debug_image(grey_orig[j, ...], prediction[j, ...], img_orig[j, ...])
+                img_result = stich_debug_image(grey_orig[batch_idx, ...], prediction[batch_idx, ...],
+                                               prediction_smooth[batch_idx, ...], img_orig[batch_idx, ...])
             else:
-                img_result = stich_image(grey_orig[j, ...], prediction[j, ...])
+                img_result = stich_image(grey_orig[batch_idx, ...], prediction[batch_idx, ...])
 
             if tensorboard:
                 results.append(cv2.cvtColor(img_result, cv2.COLOR_BGR2RGB))
@@ -89,14 +116,16 @@ def infer(model: Model,
         return results
 
 
-def stich_debug_image(grey_orig, ab_pred, img_orig) -> np.ndarray:
+def stich_debug_image(grey_orig, ab_pred, ab_smooth, img_orig) -> np.ndarray:
     h, w = grey_orig.shape[:2]
-    result = np.empty((h, w * 3, 3), dtype='uint8')
+    result = np.empty((h, w * 4, 3), dtype='uint8')
     result[:, :w, :] = img_orig
     result[:, w:w * 2, :] = cv2.cvtColor(grey_orig, cv2.COLOR_GRAY2BGR)
 
     predicted = stich_image(grey_orig, ab_pred)
+    predicted_smooth = stich_image(grey_orig, ab_smooth)
 
-    result[:, 2 * w:, :] = predicted
+    result[:, 2 * w:3 * w, :] = predicted
+    result[:, 3 * w:, :] = predicted_smooth
 
     return result

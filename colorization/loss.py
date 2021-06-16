@@ -30,9 +30,9 @@ class ColorConsistencyLoss(nn.Module):
 
     def forward(self, ab_prediction: Tensor, masks: Tensor, ab_gt: Tensor = None) -> Tensor:
         inp_dtype = ab_prediction.dtype if self.target == 'prediction' else ab_gt.dtype
-        assert ab_prediction.size() == ab_gt.size()
         if self.target == 'gt':
             assert ab_gt is not None
+            assert ab_prediction.size() == ab_gt.size()
         # x: (B, C, H, W)
         # masks: (B, H, W) LongTensor
         masks.requires_grad = False

@@ -11,6 +11,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 from colorization.loss import L2Loss, L1Loss, L2CCLoss, L1CCLoss, ColorConsistencyLoss
+from colorization.postprocess import stack_input_predictions_to_rgb
 
 np.random.seed(0)
 import torch
@@ -30,7 +31,7 @@ from colorization.chkpt_utils import delete_older_then_n
 from colorization.model import Model
 from colorization.preprocessing import to_tensor_l, to_tensor_ab
 from colorization.infer import infer
-from colorization.metrics import PSNR, SSIM, PSNR_RGB
+from colorization.metrics import PSNR, SSIM, PSNR_RGB, FrechetInceptionDistance
 
 
 def get_validation_metrics(validationloader, model, criterion, ccl_version='linear'):
@@ -40,22 +41,28 @@ def get_validation_metrics(validationloader, model, criterion, ccl_version='line
     ssim = SSIM(window_size=11, gaussian_weights=True).cuda()
     ssim_uniform = SSIM(window_size=7, gaussian_weights=False).cuda()
     psnr = PSNR()
+    fid = FrechetInceptionDistance(min(len(validationloader.dataset), 20000))
     # psnr_rgb = PSNR_RGB()
     for i, data in enumerate(tqdm(validationloader, leave=False, desc='Validation')):
-        if i == 5000:
+        if i == 20000:
             break
 
-        if len(data) == 3:
-            inputs, labels, segment_masks = data
-            inputs, labels, segment_masks = inputs.cuda(non_blocking=True), labels.cuda(
-                non_blocking=True), segment_masks.cuda(non_blocking=True)
+        if torch.cuda.is_available():
+            data = tuple([el.cuda(non_blocking=True) for el in data])
+
+        if len(data) == 4:
+            inputs, labels, segment_masks, img_orig = data
+
         else:
-            inputs, labels = data
-            inputs, labels = inputs.cuda(non_blocking=True), labels.cuda(non_blocking=True)
+            inputs, labels, img_orig = data
             segment_masks = None
 
         with autocast():
             outputs = model(inputs)
+
+            rgb_pred = stack_input_predictions_to_rgb(inputs.clone(), outputs.clone()) / 255
+            fid.calc_activations1(rgb_pred)
+            fid.calc_activations2(img_orig.permute(0, 2, 3, 1))
 
             metrics_results[0] += criterion(outputs, labels, segment_masks)[0]
             metrics_results[1] += psnr(outputs, labels)
@@ -78,7 +85,9 @@ def get_validation_metrics(validationloader, model, criterion, ccl_version='line
         if metrics_results[4] != 0.0 else \
         [criterion.__class__.__name__, 'PSNR', 'SSIM', 'SSIM-uniform']
     avg_loss_values = metrics_results.numpy().tolist()
-    return {name: avg_loss_values[i] for i, name in enumerate(loss_names)}
+    result_dict = {name: avg_loss_values[i] for i, name in enumerate(loss_names)}
+    result_dict['FID'] = fid.calculate_frechet_distance()
+    return result_dict
 
 
 def fill_growing_parameters(sparse, iterations):
@@ -104,7 +113,9 @@ def load_growing_parameters(path):
 def train(model: Model,
           state: dict,
           train_data_path: str,
+          train_rgb_json: str,
           val_data_path: str,
+          val_rgb_json: str,
           transform_file: str,
           growing_parameters: dict,
           lr: float,
@@ -205,20 +216,25 @@ def train(model: Model,
         return
 
     if train_segment_masks_path or val_segment_masks_path:
-        trainset = ImagenetColorSegmentData(train_data_path, train_segment_masks_path, transform=None,
+        trainset = ImagenetColorSegmentData(train_data_path, train_segment_masks_path, rgb_json=train_rgb_json,
+                                            transform=None,
                                             transform_l=to_tensor_l, transform_ab=to_tensor_ab)
-        testset = ImagenetColorSegmentData(val_data_path, val_segment_masks_path,
+        testset = ImagenetColorSegmentData(val_data_path, val_segment_masks_path, rgb_json=val_rgb_json,
                                            transform=transforms.get_val_transform(1024), transform_l=to_tensor_l,
                                            transform_ab=to_tensor_ab)
     else:
-        trainset = ImagenetData(train_data_path, transform=None, transform_l=to_tensor_l, transform_ab=to_tensor_ab)
-        testset = ImagenetData(val_data_path, transform=transforms.get_val_transform(1024), transform_l=to_tensor_l,
+        trainset = ImagenetData(train_data_path, rgb_json=train_rgb_json,
+                                transform=None, transform_l=to_tensor_l, transform_ab=to_tensor_ab)
+        testset = ImagenetData(val_data_path, rgb_json=val_rgb_json,
+                               transform=transforms.get_val_transform(1024), transform_l=to_tensor_l,
                                transform_ab=to_tensor_ab)
 
-    trainset_infer = ImagenetData(train_data_path, transform=transforms.get_val_transform(1024),
+    trainset_infer = ImagenetData(train_data_path, rgb_json=train_rgb_json,
+                                  transform=transforms.get_val_transform(1024),
                                   transform_l=to_tensor_l, transform_ab=to_tensor_ab,
                                   training=False)
-    testset_infer = ImagenetData(val_data_path, transform=transforms.get_val_transform(1024), transform_l=to_tensor_l,
+    testset_infer = ImagenetData(val_data_path, rgb_json=val_rgb_json,
+                                 transform=transforms.get_val_transform(1024), transform_l=to_tensor_l,
                                  transform_ab=to_tensor_ab,
                                  training=False)
 
@@ -274,14 +290,15 @@ def train(model: Model,
             else:
                 changed_batch_size = False
 
+            if torch.cuda.is_available():
+                data = tuple([el.cuda(non_blocking=True) for el in data])
+
             # get data
-            if len(data) == 3:
-                inputs, labels, segment_masks = data
-                inputs, labels = inputs.cuda(non_blocking=True), (
-                    labels.cuda(non_blocking=True), segment_masks.cuda(non_blocking=True))
+            if len(data) == 4:
+                inputs, labels, segment_masks, _ = data
+
             else:
                 inputs, labels = data
-                inputs, labels = inputs.cuda(non_blocking=True), labels.cuda(non_blocking=True)
 
             # zero the parameter gradients
             optimizer.zero_grad()
@@ -289,9 +306,9 @@ def train(model: Model,
             # forward + backward + optimize
             with autocast():
                 outputs = model(inputs)
-                crit_labels = [*labels] if train_segment_masks_path else [labels]
+                crit_labels = [labels, segment_masks] if train_segment_masks_path else [labels]
                 loss, loss_dict = criterion(outputs, *crit_labels)
-                _psnr = psnr(outputs, labels[0] if train_segment_masks_path else labels)
+                _psnr = psnr(outputs, labels)
 
             scaler.scale(loss).backward()
             scaler.step(optimizer)

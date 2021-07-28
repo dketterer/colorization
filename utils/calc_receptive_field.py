@@ -5,7 +5,7 @@ import torch
 
 from backbones import UNetVGG16DualEncoder
 from colorization.backbones import Resnet50_UNetV2, Resnet50UNetRDB, Resnext50_UNet, Resnet50_UNet, Resnet101_UNetV2, \
-    Resnet152_UNetV2, DenseNet121UNetRDB
+    Resnet152_UNetV2, DenseNet121UNetRDB, InceptionResNetV2UNetAttention
 
 
 class TestReceptiveField():
@@ -116,13 +116,28 @@ class TestReceptiveField():
             y_hat_2 = torch.narrow(resunet(inp), 1, 0, 1).numpy()
         self.analyze(y_hat_1, y_hat_2, inp, 'UNetVGG16DualEncoder')
 
+    def test_InceptionResNetV2UNetAttention(self):
+        torch.manual_seed(0)
+        model = InceptionResNetV2UNetAttention()
+        model = model.eval()
+        with torch.no_grad():
+            inp = torch.randn([1, 1, 2048, 2048])
+            inp[0, 0, 0, 0] = 0
+
+            y_hat_1 = torch.narrow(model(inp), 1, 0, 1).numpy()
+            inp[0, 0, 0, 0] = 1
+
+            y_hat_2 = torch.narrow(model(inp), 1, 0, 1).numpy()
+        self.analyze(y_hat_1, y_hat_2, inp, 'InceptionResNetV2UNetAttention')
+
 
 if __name__ == '__main__':
     test = TestReceptiveField()
-    test.test_resunet_v2()
-    test.test_resnet_unet()
-    test.test_resnext_unet()
-    test.test_res_unet_rdb()
-    test.test_DenseNet121UNetRDB()
-    test.test_resnet101_unet()
-    test.test_UNetVGG16DualEncoder()
+    #test.test_resunet_v2()
+    #test.test_resnet_unet()
+    #test.test_resnext_unet()
+    #test.test_res_unet_rdb()
+    #test.test_DenseNet121UNetRDB()
+    #test.test_resnet101_unet()
+    #test.test_UNetVGG16DualEncoder()
+    test.test_InceptionResNetV2UNetAttention()

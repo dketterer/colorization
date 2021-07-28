@@ -56,3 +56,15 @@ def InceptionResNetV2UNet():
 def InceptionResNetV2UNetAttention():
     return SMPModel(smp.Unet(encoder_name='inceptionresnetv2', encoder_weights='imagenet', classes=2,
                              decoder_attention_type='scse'))
+
+
+@register
+def Resnet50UNetAttention():
+    return SMPModel(smp.Unet(encoder_name='resnet50', encoder_weights='imagenet', classes=2,
+                             decoder_attention_type='scse'))
+
+
+@register
+def Resnet34UNetAttention():
+    return SMPModel(smp.Unet(encoder_name='resnet34', encoder_weights='imagenet', classes=2,
+                             decoder_attention_type='scse'))

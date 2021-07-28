@@ -4,6 +4,7 @@
 # code mostly borrowed from skimage colorconv.py
 import torch
 from skimage.color.colorconv import rgb_from_xyz, get_xyz_coords, xyz_from_rgb
+from torch.cuda.amp import custom_fwd
 
 rgb_from_xyz_tensor = torch.Tensor(rgb_from_xyz)
 xyz_from_rgb_tensor = torch.Tensor(xyz_from_rgb)
@@ -215,7 +216,7 @@ def lab2xyz(lab, illuminant="D65", observer="2"):
 
     arr = _prepare_colorarray(lab)
 
-    L, a, b = arr[:, :, 0], arr[:, :, 1], arr[:, :, 2]
+    L, a, b = arr[..., 0], arr[..., 1], arr[..., 2]
     y = (L + 16.) / 116.
     x = (a / 500.) + y
     z = y - (b / 200.)
@@ -238,6 +239,7 @@ def lab2xyz(lab, illuminant="D65", observer="2"):
     return out
 
 
+@custom_fwd(cast_inputs=torch.float32)
 def rgb2lab(rgb, illuminant="D65", observer="2"):
     """RGB to lab color space conversion.
     Parameters
@@ -271,12 +273,16 @@ def rgb2lab(rgb, illuminant="D65", observer="2"):
     return xyz2lab(rgb2xyz(rgb), illuminant, observer)
 
 
+@custom_fwd(cast_inputs=torch.float32)
 def lab2rgb(lab, illuminant="D65", observer="2"):
     """Lab to RGB color space conversion.
     Parameters
     ----------
     lab : array_like
         The image in Lab format, in a 3-D array of shape ``(.., .., 3)``.
+        l in 0..100
+        ab in -128..127
+        float Tensor
     illuminant : {"A", "D50", "D55", "D65", "D75", "E"}, optional
         The name of the illuminant (the function is NOT case sensitive).
     observer : {"2", "10"}, optional

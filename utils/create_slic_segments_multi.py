@@ -8,8 +8,8 @@ from multiprocessing.dummy import Pool
 
 from tqdm.contrib.concurrent import process_map
 
-N_SEGMENTS = 100
-COMPACTNESS = 5
+N_SEGMENTS = 500
+COMPACTNESS = 7.5
 MAX_ITER = 10
 
 
@@ -33,14 +33,18 @@ def worker(args):
 
 
 def main():
-    parent_folder = '/mnt/data/datasets/color-overfit/n01440764'
-    target_folder = '/mnt/data/datasets/Imagenet-SLIC-SEG100-COMP5-ITER10/color-overfit'
+    parent_folder = '/media/daniel/Windowsdata/Imagenet/train'
+    target_folder = '/media/daniel/Windowsdata/Imagenet-SLIC-SEG500-COMP7.5-ITER10/color-overfit'
     if not os.path.exists(target_folder):
         os.makedirs(target_folder, exist_ok=True)
 
     color_images = []
     for file in os.listdir(parent_folder):
-        color_images.append((os.path.join(parent_folder, file), target_folder))
+        if os.path.isdir(os.path.join(parent_folder, file)):
+            for file2 in os.listdir(os.path.join(parent_folder, file)):
+                color_images.append((os.path.join(parent_folder, file, file2), target_folder))
+        else:
+            color_images.append((os.path.join(parent_folder, file), target_folder))
 
     shuffle(color_images)
     r = process_map(worker, color_images, max_workers=6, chunksize=50)

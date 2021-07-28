@@ -23,7 +23,9 @@ def parse_args(args):
                               help='path to output model or checkpoint to resume from')
     parser_train.add_argument('transform', metavar='path', type=str, help='path transform.py')
     parser_train.add_argument('--images', metavar='path', type=str, help='path to images', default='.')
+    parser_train.add_argument('--rgb_json', metavar='path', type=str, help='path to json with file names', default='.')
     parser_train.add_argument('--val_images', metavar='path', type=str, help='path to images')
+    parser_train.add_argument('--val_rgb_json', metavar='path', type=str, help='path to json with file names', default='.')
     parser_train.add_argument('--segment_masks', metavar='path', type=str, help='path to images')
     parser_train.add_argument('--val_segment_masks', metavar='path', type=str, help='path to images')
     parser_train.add_argument('--backbone', action='store', type=str, help='backbone model', default='UNet_bc64_d4')
@@ -104,7 +106,8 @@ def main(args):
         print(f'Use CUDA backend: {torch.cuda.get_device_name()}')
 
     if args.command == 'train':
-        train.train(model=model, state=state, train_data_path=args.images, val_data_path=args.val_images,
+        train.train(model=model, state=state, train_data_path=args.images, train_rgb_json=args.rgb_json,
+                    val_data_path=args.val_images, val_rgb_json=args.val_rgb_json,
                     transform_file=args.transform, growing_parameters=args.growing_parameters,
                     optimizer_name=args.optimizer, lambda_ccl=args.lambda_ccl, loss_type=args.loss,
                     ccl_version=args.ccl_version, train_segment_masks_path=args.segment_masks,

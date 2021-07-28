@@ -125,15 +125,14 @@ class TestImagenetData(unittest.TestCase):
         transform = A.Compose(
             [A.Resize(256, 256, always_apply=True)])
         dataset = data.ImagenetColorSegmentData('test/resources/images', 'test/resources/color_segment', transform)
-        trainloader = get_trainloader(dataset, 7, SavableShuffleSampler(dataset, shuffle=False))
+        trainloader = get_trainloader(dataset, 1, SavableShuffleSampler(dataset, shuffle=False))
         it = iter(trainloader)
         d = it.__next__()
-        inputs, labels = d
-        ab, segment_masks = labels
-        self.assertEqual(7, len(inputs))
-        self.assertEqual(7, len(segment_masks))
-        self.assertEqual(7, len(ab))
-        self.assertEqual(50, len(segment_masks[1]))
+        inputs, ab, segment_masks, img_orig = d
+        self.assertEqual(1, len(inputs))
+        self.assertEqual(1, len(segment_masks))
+        self.assertEqual(1, len(ab))
+        self.assertEqual(torch.float32, img_orig.dtype)
 
 
 if __name__ == '__main__':

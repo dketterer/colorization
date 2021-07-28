@@ -1,11 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="9975ce25-111e-4589-8757-f942c9e40dfe" name="Default Changelist" comment="Add DualDenseUNetRDB network">
+    <list default="true" id="9975ce25-111e-4589-8757-f942c9e40dfe" name="Default Changelist" comment="Move assertion">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/colorization/metrics/ssim.py" beforeDir="false" afterPath="$PROJECT_DIR$/colorization/metrics/ssim.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ColorConsistencyLossExamples.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/ColorConsistencyLossExamples.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Colorful_Image_Colorization_bin_weights.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/Colorful_Image_Colorization_bin_weights.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Explore-SLIC-Configurations.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/Explore-SLIC-Configurations.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/colorization/backbones/smp_models.py" beforeDir="false" afterPath="$PROJECT_DIR$/colorization/backbones/smp_models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/colorization/cielab.py" beforeDir="false" afterPath="$PROJECT_DIR$/colorization/cielab.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/colorization/data.py" beforeDir="false" afterPath="$PROJECT_DIR$/colorization/data.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/colorization/infer.py" beforeDir="false" afterPath="$PROJECT_DIR$/colorization/infer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/colorization/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/colorization/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/colorization/metrics/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/colorization/metrics/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/colorization/train.py" beforeDir="false" afterPath="$PROJECT_DIR$/colorization/train.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/test_ssim.py" beforeDir="false" afterPath="$PROJECT_DIR$/test/test_ssim.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/resources/color_segment/ILSVRC2012_val_00000015.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/resources/images/a/black-pixel.png" beforeDir="false" afterPath="$PROJECT_DIR$/test/resources/images/a/black-pixel.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/test_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/test/test_data.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/calc_receptive_field.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/calc_receptive_field.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/create_slic_segments_multi.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/create_slic_segments_multi.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -55,14 +67,58 @@
       <recent name="$PROJECT_DIR$/src/colorization" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/test/resources/color_segment" />
       <recent name="$PROJECT_DIR$/colorization" />
+      <recent name="$PROJECT_DIR$/test/resources/color_segment" />
       <recent name="$PROJECT_DIR$/test/resources/images/a" />
       <recent name="$PROJECT_DIR$/test/resources/images" />
       <recent name="$PROJECT_DIR$" />
     </key>
   </component>
-  <component name="RunManager" selected="Python tests.Unittests in test_ssim.py">
+  <component name="RunManager" selected="Python.calc_receptive_field">
+    <configuration name="calc_receptive_field" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="colorization" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/utils" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/utils/calc_receptive_field.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="create_filelist_rgb" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="colorization" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/utils" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/utils/create_filelist_rgb.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="main" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="colorization" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -121,7 +177,7 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/colorization/main.py" />
-      <option name="PARAMETERS" value="--verbose train DenseNet121UNetRDB.pth resources/transform.py --backbone DenseNet121UNetRDB --images /media/daniel/Windowsdata/Imagenet/test --segment_masks /media/daniel/Windowsdata/Imagenet-colorsegments-n20/test --val_images /media/daniel/Windowsdata/Imagenet/val --val_segment_masks /media/daniel/Windowsdata/Imagenet-colorsegments-n20/val --loss L1+CCL --ccl_version linear --lambda_ccl 0.5 --lr 0.001 --regularization_l2 0.0001 --growing_parameters resources/growing_parameters.json --iterations 100000 --milestones 50000 --warmup 1000 --val_iterations 500 --debug" />
+      <option name="PARAMETERS" value="--verbose train DenseNet121UNetRDB.pth resources/transform.py --backbone DenseNet121UNetRDB --images /media/daniel/Windowsdata/Imagenet/color-overfit --segment_masks /media/daniel/Windowsdata/Imagenet-SLIC-SEG100-COMP5-ITER10/color-overfit --val_images /media/daniel/Windowsdata/Imagenet/color-overfit --val_segment_masks /media/daniel/Windowsdata/Imagenet-SLIC-SEG100-COMP5-ITER10/color-overfit --loss L2W+CCL --ccl_version euclidean --lambda_ccl 0.5 --lr 0.001 --regularization_l2 0.0001 --growing_parameters resources/growing_parameters.json --iterations 100000 --milestones 50000 --warmup 1000 --val_iterations 20 --debug" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
@@ -129,7 +185,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="Unittests for test_dense_unet_rdb.TestDenseUNetRDB.test_dual" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
+    <configuration name="Unittests for test_fid.MyFrechetInceptionDistance" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
       <module name="colorization" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -141,11 +197,11 @@
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="_new_pattern" value="&quot;&quot;" />
       <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;test_dense_unet_rdb.TestDenseUNetRDB.test_dual&quot;" />
+      <option name="_new_target" value="&quot;test_fid.MyFrechetInceptionDistance&quot;" />
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
-    <configuration name="Unittests for test_ssim.TestSSIM.test_same_images_uniform" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
+    <configuration name="Unittests for test_postprocess.TestPostprocess" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
       <module name="colorization" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -157,55 +213,23 @@
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="_new_pattern" value="&quot;&quot;" />
       <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;test_ssim.TestSSIM.test_same_images_uniform&quot;" />
+      <option name="_new_target" value="&quot;test_postprocess.TestPostprocess&quot;" />
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
-    <configuration name="Unittests for test_ssim.TestSSIM.test_unequal_uniform" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
+    <configuration name="Unittests in test_cielab.py" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
       <module name="colorization" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
-      <option name="SDK_HOME" value="$USER_HOME$/.local/share/anaconda3/envs/colorization-1.8/bin/python" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/test" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="_new_pattern" value="&quot;&quot;" />
       <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;test_ssim.TestSSIM.test_unequal_uniform&quot;" />
-      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
-      <method v="2" />
-    </configuration>
-    <configuration name="Unittests in test_dense_unet_rdb.py" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
-      <module name="colorization" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <option name="SDK_HOME" value="$USER_HOME$/.local/share/anaconda3/envs/colorization-1.8/bin/python" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="_new_pattern" value="&quot;&quot;" />
-      <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;$PROJECT_DIR$/test/test_dense_unet_rdb.py&quot;" />
-      <option name="_new_targetType" value="&quot;PATH&quot;" />
-      <method v="2" />
-    </configuration>
-    <configuration name="Unittests in test_ssim.py" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
-      <module name="colorization" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <option name="SDK_HOME" value="$USER_HOME$/.local/share/anaconda3/envs/colorization-1.8/bin/python" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="_new_pattern" value="&quot;&quot;" />
-      <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;$PROJECT_DIR$/test/test_ssim.py&quot;" />
+      <option name="_new_target" value="&quot;$PROJECT_DIR$/test/test_cielab.py&quot;" />
       <option name="_new_targetType" value="&quot;PATH&quot;" />
       <method v="2" />
     </configuration>
@@ -229,19 +253,19 @@
       <item itemvalue="Python.profile train" />
       <item itemvalue="Python.main" />
       <item itemvalue="Python.train- segment" />
-      <item itemvalue="Python tests.Unittests for test_dense_unet_rdb.TestDenseUNetRDB.test_dual" />
-      <item itemvalue="Python tests.Unittests in test_dense_unet_rdb.py" />
-      <item itemvalue="Python tests.Unittests for test_ssim.TestSSIM.test_same_images_uniform" />
-      <item itemvalue="Python tests.Unittests for test_ssim.TestSSIM.test_unequal_uniform" />
-      <item itemvalue="Python tests.Unittests in test_ssim.py" />
+      <item itemvalue="Python.create_filelist_rgb" />
+      <item itemvalue="Python.calc_receptive_field" />
+      <item itemvalue="Python tests.Unittests in test_cielab.py" />
+      <item itemvalue="Python tests.Unittests for test_postprocess.TestPostprocess" />
+      <item itemvalue="Python tests.Unittests for test_fid.MyFrechetInceptionDistance" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Python tests.Unittests in test_ssim.py" />
-        <item itemvalue="Python tests.Unittests for test_ssim.TestSSIM.test_unequal_uniform" />
-        <item itemvalue="Python tests.Unittests for test_ssim.TestSSIM.test_same_images_uniform" />
-        <item itemvalue="Python tests.Unittests in test_dense_unet_rdb.py" />
-        <item itemvalue="Python tests.Unittests for test_dense_unet_rdb.TestDenseUNetRDB.test_dual" />
+        <item itemvalue="Python.calc_receptive_field" />
+        <item itemvalue="Python tests.Unittests for test_postprocess.TestPostprocess" />
+        <item itemvalue="Python.create_filelist_rgb" />
+        <item itemvalue="Python tests.Unittests for test_fid.MyFrechetInceptionDistance" />
+        <item itemvalue="Python tests.Unittests in test_cielab.py" />
       </list>
     </recent_temporary>
   </component>
@@ -292,6 +316,16 @@
       <workItem from="1619440433776" duration="71212000" />
       <workItem from="1619775967983" duration="16666000" />
       <workItem from="1620028929610" duration="24747000" />
+      <workItem from="1623156225881" duration="837000" />
+      <workItem from="1623227949893" duration="624000" />
+      <workItem from="1623315331990" duration="2207000" />
+      <workItem from="1623827007634" duration="17017000" />
+      <workItem from="1624350267499" duration="4973000" />
+      <workItem from="1626256019195" duration="17304000" />
+      <workItem from="1626940937416" duration="7994000" />
+      <workItem from="1627295733722" duration="530000" />
+      <workItem from="1627309064974" duration="8977000" />
+      <workItem from="1627472478360" duration="1229000" />
     </task>
     <task id="LOCAL-00001" summary="add first steps rewrite steps, working training">
       <created>1616503320586</created>
@@ -552,7 +586,21 @@
       <option name="project" value="LOCAL" />
       <updated>1620053087321</updated>
     </task>
-    <option name="localTasksCounter" value="38" />
+    <task id="LOCAL-00038" summary="Update README.md">
+      <created>1623156415437</created>
+      <option name="number" value="00038" />
+      <option name="presentableId" value="LOCAL-00038" />
+      <option name="project" value="LOCAL" />
+      <updated>1623156415437</updated>
+    </task>
+    <task id="LOCAL-00039" summary="Move assertion">
+      <created>1623827126871</created>
+      <option name="number" value="00039" />
+      <option name="presentableId" value="LOCAL-00039" />
+      <option name="project" value="LOCAL" />
+      <updated>1623827126871</updated>
+    </task>
+    <option name="localTasksCounter" value="40" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -583,8 +631,6 @@
     <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Add new training and chkpt save options; change dominating training structure to iterations" />
-    <MESSAGE value="Convert function to out of place" />
     <MESSAGE value="Remove dir creation, set print_every to better default" />
     <MESSAGE value="Improve documentation for trainings parameter" />
     <MESSAGE value="Fix missing milesones param in training" />
@@ -608,18 +654,9 @@
     <MESSAGE value="Add UNetVGGDualEncoder network" />
     <MESSAGE value="Fix performance issues" />
     <MESSAGE value="Add DualDenseUNetRDB network" />
-    <option name="LAST_COMMIT_MESSAGE" value="Add DualDenseUNetRDB network" />
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/colorization/loss.py</url>
-          <line>107</line>
-          <option name="timeStamp" value="7" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
+    <MESSAGE value="Update README.md" />
+    <MESSAGE value="Move assertion" />
+    <option name="LAST_COMMIT_MESSAGE" value="Move assertion" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/colorization$benchmark_ccl.coverage" NAME="benchmark_ccl Coverage Results" MODIFIED="1619554208224" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/utils" />
@@ -634,8 +671,8 @@
     <SUITE FILE_PATH="coverage/colorization$Unittests_in_test_densenet_py.coverage" NAME="Unittests in test_densenet.py Coverage Results" MODIFIED="1619087481486" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/colorization$Unittests_for_test_data_TestImagenetData_test_trainloader.coverage" NAME="Unittests for test_data.TestImagenetData.test_trainloader Coverage Results" MODIFIED="1619454338354" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/colorization$Unittests_in_test_dense_unet_rdb_py.coverage" NAME="Unittests in test_dense_unet_rdb.py Coverage Results" MODIFIED="1620044473972" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/colorization$Unittests_for_test_data_TestImagenetData_test_trainloader_with_color_segments.coverage" NAME="Unittests for test_data.TestImagenetData.test_trainloader_with_color_segments Coverage Results" MODIFIED="1619555267382" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/colorization$calc_receptive_field.coverage" NAME="calc_receptive_field Coverage Results" MODIFIED="1620035113680" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/utils" />
+    <SUITE FILE_PATH="coverage/colorization$Unittests_for_test_data_TestImagenetData_test_trainloader_with_color_segments.coverage" NAME="Unittests for test_data.TestImagenetData.test_trainloader_with_color_segments Coverage Results" MODIFIED="1623917493379" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/colorization$calc_receptive_field.coverage" NAME="calc_receptive_field Coverage Results" MODIFIED="1627391374828" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/utils" />
     <SUITE FILE_PATH="coverage/colorization$Unittests_for_test_test_data_TestImagenetData_test_trainloader_with_color_segments.coverage" NAME="Unittests for test.test_data.TestImagenetData.test_trainloader_with_color_segments Coverage Results" MODIFIED="1619556425678" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/colorization$Unittests_for_test_data_TestImagenetData_test_conversion.coverage" NAME="Unittests for test_data.TestImagenetData.test_conversion Coverage Results" MODIFIED="1619432016049" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/colorization$Unittests_for_test_color_consitency_loss_TestColorConsistencyLoss_test_basics.coverage" NAME="Unittests for test_color_consitency_loss.TestColorConsistencyLoss.test_basics Coverage Results" MODIFIED="1619119133606" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/test" />
@@ -650,6 +687,7 @@
     <SUITE FILE_PATH="coverage/colorization$Unittests_in_test.coverage" NAME="Unittests in test Coverage Results" MODIFIED="1618498421493" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/colorization$resize.coverage" NAME="resize Coverage Results" MODIFIED="1616689461636" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/utils" />
     <SUITE FILE_PATH="coverage/colorization$Unittests_for_test_receptive_field_TestReceptiveField_test_resunet.coverage" NAME="Unittests for test_receptive_field.TestReceptiveField.test_resunet Coverage Results" MODIFIED="1619031571360" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/colorization$Unittests_for_test_cielab_TestCIELAB.coverage" NAME="Unittests for test_cielab.TestCIELAB Coverage Results" MODIFIED="1626257296304" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/colorization$Unittests_for_test_color_consitency_loss_TestColorConsistencyLoss_test_linear.coverage" NAME="Unittests for test_color_consitency_loss.TestColorConsistencyLoss.test_linear Coverage Results" MODIFIED="1619564084050" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/colorization$Unittests_for_test_ssim_TestSSIM_test_unequal_uniform.coverage" NAME="Unittests for test_ssim.TestSSIM.test_unequal_uniform Coverage Results" MODIFIED="1620129383984" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/colorization$Unittests_for_test_unet_dual_encoder_TestUNet_test_model_structure.coverage" NAME="Unittests for test_unet_dual_encoder.TestUNet.test_model_structure Coverage Results" MODIFIED="1620031827603" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
@@ -672,13 +710,18 @@
     <SUITE FILE_PATH="coverage/colorization$Unittests_for_test_resunet_TestResUNet_test_structure.coverage" NAME="Unittests for test_resunet.TestResUNet.test_structure Coverage Results" MODIFIED="1618924155847" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/colorization$Unittests_for_test_color_consitency_loss_TestColorConsistencyLoss_test_filled.coverage" NAME="Unittests for test_color_consitency_loss.TestColorConsistencyLoss.test_filled Coverage Results" MODIFIED="1619558020734" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/colorization$Unittests_in_test_unet_py.coverage" NAME="Unittests in test_unet.py Coverage Results" MODIFIED="1616424416108" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/test" />
+    <SUITE FILE_PATH="coverage/colorization$Unittests_for_test_postprocess_TestPostprocess.coverage" NAME="Unittests for test_postprocess.TestPostprocess Coverage Results" MODIFIED="1626943811061" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/colorization$Unittests_for_test_cielab_TestCIELAB_test_lab2rgb_cv2.coverage" NAME="Unittests for test_cielab.TestCIELAB.test_lab2rgb_cv2 Coverage Results" MODIFIED="1626257304285" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/colorization$Unittests_for_test_resnet_rdb_pixshuffle_TestResnetPixShuffle_test_structure.coverage" NAME="Unittests for test_resnet_rdb_pixshuffle.TestResnetPixShuffle.test_structure Coverage Results" MODIFIED="1618948933173" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/colorization$Unittests_in_test_cielab_py.coverage" NAME="Unittests in test_cielab.py Coverage Results" MODIFIED="1626257341937" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/test" />
     <SUITE FILE_PATH="coverage/colorization$scratch_2.coverage" NAME="scratch_2 Coverage Results" MODIFIED="1618578251841" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$APPLICATION_CONFIG_DIR$/scratches" />
     <SUITE FILE_PATH="coverage/colorization$Unittests_for_test_test_color_consitency_loss_TestColorConsistencyLoss_test_squared.coverage" NAME="Unittests for test.test_color_consitency_loss.TestColorConsistencyLoss.test_squared Coverage Results" MODIFIED="1619511416351" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/colorization$Unittests_for_test_receptive_field_TestReceptiveField_test_DenseNet121UNetRDB.coverage" NAME="Unittests for test_receptive_field.TestReceptiveField.test_DenseNet121UNetRDB Coverage Results" MODIFIED="1619090445324" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/test" />
-    <SUITE FILE_PATH="coverage/colorization$train__segment.coverage" NAME="train- segment Coverage Results" MODIFIED="1619566038477" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/colorization$create_filelist_rgb.coverage" NAME="create_filelist_rgb Coverage Results" MODIFIED="1626298973390" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/utils" />
+    <SUITE FILE_PATH="coverage/colorization$train__segment.coverage" NAME="train- segment Coverage Results" MODIFIED="1624352633514" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/colorization$Unittests_for_test_train_MyTestCase_test_fill_growing_parameters.coverage" NAME="Unittests for test_train.MyTestCase.test_fill_growing_parameters Coverage Results" MODIFIED="1616493709755" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/test" />
     <SUITE FILE_PATH="coverage/colorization$Unittests_for_test_data_TestImagenetData_test_SaveableSampler.coverage" NAME="Unittests for test_data.TestImagenetData.test_SaveableSampler Coverage Results" MODIFIED="1618779227661" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/colorization$Unittests_in_test_ssim_py.coverage" NAME="Unittests in test_ssim.py Coverage Results" MODIFIED="1620129387978" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/colorization$Unittests_for_test_fid_MyFrechetInceptionDistance.coverage" NAME="Unittests for test_fid.MyFrechetInceptionDistance Coverage Results" MODIFIED="1626268261858" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>

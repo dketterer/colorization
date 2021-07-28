@@ -1,3 +1,5 @@
+import copy
+import json
 import os
 import re
 import time
@@ -11,6 +13,7 @@ import torch
 from torch.utils.data import Dataset, Sampler
 import matplotlib.pyplot as plt
 from torch.utils.data.dataloader import default_collate
+from torchvision.transforms import ToTensor
 
 from colorization.preprocessing import split_channels
 
@@ -27,6 +30,7 @@ def is_rgb(path):
 class ImagenetData(Dataset):
     def __init__(self,
                  folder: str,
+                 rgb_json: str = None,
                  transform: Callable = None,
                  transform_l: Callable = None,
                  transform_ab: Callable = None,
@@ -57,16 +61,21 @@ class ImagenetData(Dataset):
         image_extensions = ['.jpg', '.jpeg', '.JPG', '.JPEG', '.png', '.PNG']
 
         imagenet_paths = []
+        if rgb_json:
+            with open(rgb_json, 'r') as f:
+                rgb_file_names = json.load(f)
         tic = time.time()
+        if rgb_json:
+            rgb_file_names_set = set(rgb_file_names)
 
         for file in os.listdir(self.imagenet_folder):
             if os.path.isdir(os.path.join(self.imagenet_folder, file)):
                 for file2 in os.listdir(os.path.join(self.imagenet_folder, file)):
                     if os.path.splitext(file2)[1] in image_extensions:
-                        if is_rgb(os.path.join(self.imagenet_folder, file, file2)):
+                        if not rgb_json or file2 in rgb_file_names_set:
                             imagenet_paths.append(os.path.join(self.imagenet_folder, file, file2))
             if os.path.splitext(file)[1] in image_extensions:
-                if is_rgb(os.path.join(self.imagenet_folder, file)):
+                if not rgb_json or file in rgb_file_names_set:
                     imagenet_paths.append(os.path.join(self.imagenet_folder, file))
 
         self.paths = imagenet_paths
@@ -99,6 +108,8 @@ class ImagenetData(Dataset):
             img = self.transform(image=img)['image']
             if not self.training:
                 img_orig = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+            else:
+                img_orig = ToTensor()(img)
 
         if self.debug:
             plt.imshow(img)
@@ -115,7 +126,7 @@ class ImagenetData(Dataset):
             ab = self.to_tensor_ab(ab)
 
         if self.training:
-            return grey, ab
+            return grey, ab, img_orig
 
         return grey, ab, img_orig, grey_orig
 
@@ -143,6 +154,7 @@ class ImagenetColorSegmentData(Dataset):
     def __init__(self,
                  imagenet_folder: str,
                  colorsegment_folder: str,
+                 rgb_json: str,
                  transform: Callable = None,
                  transform_l: Callable = None,
                  transform_ab: Callable = None,
@@ -173,21 +185,24 @@ class ImagenetColorSegmentData(Dataset):
 
         image_extensions = ['.jpg', '.jpeg', '.JPG', '.JPEG', '.png', '.PNG']
 
-        file_names = []
         imagenet_paths = []
+
+        with open(rgb_json, 'r') as f:
+            rgb_file_names = json.load(f)
         tic = time.time()
+
+        file_names = copy.copy(rgb_file_names)
+        rgb_file_names_set = set(rgb_file_names)
 
         for file in os.listdir(self.imagenet_folder):
             if os.path.isdir(os.path.join(self.imagenet_folder, file)):
                 for file2 in os.listdir(os.path.join(self.imagenet_folder, file)):
                     if os.path.splitext(file2)[1] in image_extensions:
-                        if is_rgb(os.path.join(self.imagenet_folder, file, file2)):
+                        if file2 in rgb_file_names_set:
                             imagenet_paths.append(os.path.join(self.imagenet_folder, file, file2))
-                            file_names.append(file2)
             if os.path.splitext(file)[1] in image_extensions:
-                if is_rgb(os.path.join(self.imagenet_folder, file)):
+                if file in rgb_file_names_set:
                     imagenet_paths.append(os.path.join(self.imagenet_folder, file))
-                    file_names.append(file)
 
         segment_paths = [os.path.join(self.colorsegment_folder, os.path.splitext(file)[0] + '.png') for file in
                          file_names]
@@ -205,7 +220,8 @@ class ImagenetColorSegmentData(Dataset):
                     self.mem_dict[segment_path] = np.fromfile(segment_path, dtype=np.uint8)
                 else:
                     self.mem_dict[segment_path] = None
-
+            self.paths = [path_tup for path_tup in self.paths if
+                          self.mem_dict[path_tup[0]] is not None and self.mem_dict[path_tup[1]] is not None]
         print(f'Loaded dataset in {time.time() - tic:.2f}s {"into memory" if self.buffer_in_mem else ""}')
 
     def __len__(self):
@@ -237,6 +253,8 @@ class ImagenetColorSegmentData(Dataset):
                 segment = segment.astype(np.int64)
             if not self.training:
                 img_orig = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+            else:
+                img_orig = ToTensor()(img)
 
         if self.debug:
             plt.imshow(img)
@@ -253,7 +271,7 @@ class ImagenetColorSegmentData(Dataset):
             ab = self.to_tensor_ab(ab)
 
         if self.training:
-            return grey, ab, segment
+            return grey, ab, segment, img_orig
 
         return grey, ab, img_orig, grey_orig
 

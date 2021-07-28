@@ -85,7 +85,8 @@ def infer(model: Model,
         with torch.no_grad():
             with autocast():
                 prediction = model(grey)
-                prediction_smooth = model(grey_smooth)
+                if debug:
+                    prediction_smooth = model(grey_smooth)
         del grey
         if debug:
             del grey_smooth

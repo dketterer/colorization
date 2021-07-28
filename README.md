@@ -27,6 +27,7 @@ Loss: L2W+CCL-euclidean, weights: alpha 1, ccl_lambda 1
 SLIC: 100 segments, compactness 5, 10 iterations  
 LR 3e-4  
 BS 16  
+200 000 iterations  
 Trainings images were 256x256
 
 ## Prerequisites
@@ -38,7 +39,7 @@ conda install pytorch==1.8.1 torchvision torchaudio cudatoolkit=11.1 -c pytorch 
 conda install numpy ninja pyyaml mkl mkl-include setuptools cmake cffi typing_extensions future six requests dataclasses
 conda install -c conda-forge opencv jupyterlab albumentations matplotlib torchvision
 conda install tqdm protobuf
-pip install python-magic segmentation-models-pytorch
+pip install python-magic segmentation-models-pytorch torchsummary
 ```
 
 I work with a self compiled Pytorch to get the latest Cudnn support, but it should not make a difference if you use the
@@ -68,9 +69,9 @@ For the Color Consistency Loss you have to create the segmentation masks in adva
 ## Training
 
 ```
-usage: main.py train [-h] [--images path] [--val_images path] [--segment_masks path] [--val_segment_masks path] [--backbone BACKBONE] [--head_type HEAD_TYPE] [--loss selection] [--lambda_ccl value] [--ccl_version selection]
-                     [--lr value] [--alpha value] [--gamma value] [--regularization_l2 value] [--momentum value] [--optimizer selection] --iterations value [--val_iterations value] [--warmup iterations]
-                     [--milestones [iterations [iterations ...]]] --growing_parameters path [--debug]
+usage: main.py train [-h] [--images path] [--rgb_json path] [--val_images path] [--val_rgb_json path] [--segment_masks path] [--val_segment_masks path] [--backbone BACKBONE] [--head_type HEAD_TYPE] [--loss selection]
+                     [--lambda_ccl value] [--ccl_version selection] [--lr value] [--alpha value] [--gamma value] [--regularization_l2 value] [--momentum value] [--optimizer selection] --iterations value [--val_iterations value]
+                     [--warmup iterations] [--milestones [iterations [iterations ...]]] --growing_parameters path [--debug]
                      path path
 
 positional arguments:
@@ -80,7 +81,9 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   --images path         path to images
+  --rgb_json path       path to json with file names
   --val_images path     path to images
+  --val_rgb_json path   path to json with file names
   --segment_masks path  path to images
   --val_segment_masks path
                         path to images
@@ -106,8 +109,6 @@ optional arguments:
   --milestones [iterations [iterations ...]]
                         List of iteration indices where learning rate decays
   --growing_parameters path
-                        Json file with the params fpr batch size and image size
-  --debug               No shuffle
 ```
 
 Example:
@@ -155,7 +156,6 @@ optional arguments:
   --batch_size value  Batch size
   --img_limit value   Only first N images in the folder
   --debug             Stich original image, grey and predicted together
-  --transform path    Python file with a transform function
 ```
 
 ## Generate Color Segmentation Masks
